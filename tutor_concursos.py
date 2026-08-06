@@ -1,13 +1,11 @@
 import streamlit as st
 from groq import Groq
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import json
 import random
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="TUTOR DE CONCURSOS", layout="wide")
+st.set_page_config(page_title="TUTOR DE CONCURSOS IA", layout="wide")
 
-# --- ESTILO CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap');
@@ -17,7 +15,8 @@ st.markdown("""
 
     .stTextInput>div>div>input,
     .stTextArea>div>textarea,
-    .stSelectbox>div>div>div {
+    .stSelectbox>div>div>div,
+    .stNumberInput>div>div>input {
         background-color: #FFFBEB !important;
         color: #000000 !important;
         border: 1px solid #FCD34D !important;
@@ -33,270 +32,388 @@ st.markdown("""
         transition: all 0.2s ease;
     }
     .stButton>button:hover { background: linear-gradient(135deg, #B45309, #D97706) !important; transform: translateY(-1px); }
+    .stApp .stButton>button, .stApp .stButton>button p,
+    .stApp .stButton>button span, .stApp .stButton>button div { color: white !important; }
 
-    h1, h2, h3 { font-family: 'Playfair Display', serif !important; color: #1A1A2E !important; }
-    p, span, label, div { color: #1A1A2E !important; font-family: 'DM Sans', sans-serif; }
+    .stApp h1, .stApp h2, .stApp h3 { font-family: 'Playfair Display', serif !important; color: #1A1A2E !important; }
 
-    .card {
-        background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
-        padding: 22px; border-radius: 16px;
-        border: 1px solid #FCD34D; margin-bottom: 15px;
-        color: #1A1A2E; box-shadow: 0 2px 12px rgba(217,119,6,0.08);
-        white-space: pre-wrap;
-    }
-    .card-dark {
-        background: linear-gradient(135deg, #1C1100 0%, #2D1A00 100%);
-        padding: 22px; border-radius: 16px;
-        border: 1px solid #D97706; margin-bottom: 15px;
-        white-space: pre-wrap;
-    }
-    .card-dark, .card-dark * { color: #FDE68A !important; }
+    .card { background: linear-gradient(135deg,#FFFBEB,#FEF3C7); padding:22px; border-radius:16px; border:1px solid #FCD34D; margin-bottom:15px; white-space:pre-wrap; box-shadow:0 2px 12px rgba(217,119,6,0.08); }
+    .stApp .card, .stApp .card p, .stApp .card span, .stApp .card div, .stApp .card strong, .stApp .card em { color: #1A1A2E !important; }
 
-    .card-blue {
-        background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-        padding: 22px; border-radius: 16px;
-        border: 1px solid #93C5FD; margin-bottom: 15px;
-        white-space: pre-wrap;
-    }
-    .card-green {
-        background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
-        padding: 22px; border-radius: 16px;
-        border: 1px solid #86EFAC; margin-bottom: 15px;
-        white-space: pre-wrap;
-    }
-    .card-red {
-        background: linear-gradient(135deg, #FFF5F5 0%, #FEE2E2 100%);
-        padding: 22px; border-radius: 16px;
-        border: 1px solid #FECACA; margin-bottom: 15px;
-        white-space: pre-wrap;
-    }
-    .card-purple {
-        background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
-        padding: 22px; border-radius: 16px;
-        border: 1px solid #C4B5FD; margin-bottom: 15px;
-        white-space: pre-wrap;
-    }
+    .card-dark { background:linear-gradient(135deg,#1C1100,#2D1A00); padding:22px; border-radius:16px; border:1px solid #D97706; margin-bottom:15px; white-space:pre-wrap; }
+    .stApp .card-dark, .stApp .card-dark p, .stApp .card-dark span, .stApp .card-dark div, .stApp .card-dark strong { color:#FDE68A !important; }
 
-    .badge         { background: #D97706; color: white !important; padding: 4px 14px; border-radius: 20px; font-size: 0.78em; font-weight: 600; display: inline-block; margin: 2px; }
-    .badge-verde   { background: #059669; color: white !important; padding: 4px 14px; border-radius: 20px; font-size: 0.78em; font-weight: 600; display: inline-block; margin: 2px; }
-    .badge-azul    { background: #1D4ED8; color: white !important; padding: 4px 14px; border-radius: 20px; font-size: 0.78em; font-weight: 600; display: inline-block; margin: 2px; }
-    .badge-roxo    { background: #7C3AED; color: white !important; padding: 4px 14px; border-radius: 20px; font-size: 0.78em; font-weight: 600; display: inline-block; margin: 2px; }
-    .badge-red     { background: #EF4444; color: white !important; padding: 4px 14px; border-radius: 20px; font-size: 0.78em; font-weight: 600; display: inline-block; margin: 2px; }
+    .card-blue { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); padding:22px; border-radius:16px; border:1px solid #93C5FD; margin-bottom:15px; white-space:pre-wrap; }
+    .stApp .card-blue, .stApp .card-blue p, .stApp .card-blue span, .stApp .card-blue div { color:#1E3A8A !important; }
 
-    .stat-box { background: #FFFBEB; border-radius: 12px; padding: 18px; text-align: center; border: 1px solid #FCD34D; }
-    .stat-numero { font-size: 2em; font-weight: 700; color: #D97706 !important; font-family: 'Playfair Display', serif; }
+    .card-green { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); padding:22px; border-radius:16px; border:1px solid #86EFAC; margin-bottom:15px; white-space:pre-wrap; }
+    .stApp .card-green, .stApp .card-green p, .stApp .card-green span, .stApp .card-green div { color:#14532D !important; }
 
-    .hist-item { background: #FFFBEB; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #F59E0B; }
+    .card-red { background:linear-gradient(135deg,#FFF5F5,#FEE2E2); padding:22px; border-radius:16px; border:1px solid #FECACA; margin-bottom:15px; white-space:pre-wrap; }
+    .stApp .card-red, .stApp .card-red p, .stApp .card-red span, .stApp .card-red div { color:#7F1D1D !important; }
 
-    .questao-box {
-        background: #FFFFFF; border: 2px solid #FCD34D; border-radius: 14px;
-        padding: 20px; margin-bottom: 16px;
-    }
-    .perfil-btn>button {
-        background: linear-gradient(135deg, #D97706, #F59E0B) !important;
-        color: white !important; font-weight: 700 !important;
-        border-radius: 12px !important; height: 3em !important;
-    }
+    .card-purple { background:linear-gradient(135deg,#F5F3FF,#EDE9FE); padding:22px; border-radius:16px; border:1px solid #C4B5FD; margin-bottom:15px; white-space:pre-wrap; }
+    .stApp .card-purple, .stApp .card-purple p, .stApp .card-purple span, .stApp .card-purple div { color:#4C1D95 !important; }
 
-    .divider { border: none; height: 1px; background: linear-gradient(to right, transparent, #FCD34D, transparent); margin: 20px 0; }
+    .painel-exec { background:linear-gradient(135deg,#1A1A2E,#16213E); border:2px solid #F59E0B; border-radius:20px; padding:28px; margin-bottom:20px; }
+    .stApp .painel-exec, .stApp .painel-exec p, .stApp .painel-exec span, .stApp .painel-exec div, .stApp .painel-exec strong { color:#FDE68A !important; }
+
+    .indice-box { background:linear-gradient(135deg,#D97706,#F59E0B); border-radius:18px; padding:24px; text-align:center; box-shadow:0 4px 24px rgba(217,119,6,0.3); margin-bottom:16px; }
+    .stApp .indice-box, .stApp .indice-box p, .stApp .indice-box span, .stApp .indice-box div { color:white !important; }
+    .indice-numero { font-size:3.5em; font-weight:700; font-family:'Playfair Display',serif; }
+
+    .missao-box { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); border:2px solid #16A34A; border-radius:16px; padding:20px; margin-bottom:16px; }
+    .stApp .missao-box, .stApp .missao-box p, .stApp .missao-box span, .stApp .missao-box div, .stApp .missao-box strong { color:#14532D !important; }
+
+    .xp-box { background:linear-gradient(135deg,#F5F3FF,#EDE9FE); border:2px solid #7C3AED; border-radius:16px; padding:20px; text-align:center; margin-bottom:16px; }
+    .stApp .xp-box, .stApp .xp-box p, .stApp .xp-box span, .stApp .xp-box div { color:#4C1D95 !important; }
+
+    .conquista-item { background:#FFFBEB; border:1px solid #FCD34D; border-radius:10px; padding:12px 16px; margin-bottom:8px; display:inline-block; margin:4px; }
+    .stApp .conquista-item, .stApp .conquista-item p, .stApp .conquista-item span { color:#92400E !important; }
+
+    .radar-item { background:#F8FAFC; border-radius:10px; padding:10px 16px; margin-bottom:6px; border-left:4px solid #F59E0B; }
+    .stApp .radar-item, .stApp .radar-item p, .stApp .radar-item span, .stApp .radar-item div { color:#1A1A2E !important; }
+
+    .streak-box { background:linear-gradient(135deg,#FEF3C7,#FFFBEB); border:2px solid #F59E0B; border-radius:16px; padding:20px; text-align:center; margin-bottom:16px; }
+    .stApp .streak-box, .stApp .streak-box p, .stApp .streak-box span, .stApp .streak-box div { color:#92400E !important; }
+
+    .stat-box { background:#FFFBEB; border-radius:12px; padding:18px; text-align:center; border:1px solid #FCD34D; }
+    .stat-numero { font-size:2em; font-weight:700; color:#D97706 !important; font-family:'Playfair Display',serif; }
+
+    .hist-item { background:#FFFBEB; border-radius:10px; padding:12px 16px; margin-bottom:8px; border-left:4px solid #F59E0B; }
+    .stApp .hist-item, .stApp .hist-item p, .stApp .hist-item span, .stApp .hist-item div { color:#1A1A2E !important; }
+
+    .badge { background:#D97706; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-verde { background:#059669; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-azul { background:#1D4ED8; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-roxo { background:#7C3AED; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-red { background:#EF4444; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+
+    .perfil-btn>button { background:linear-gradient(135deg,#D97706,#F59E0B) !important; color:white !important; font-weight:700 !important; border-radius:12px !important; height:3em !important; }
+    .perfil-btn>button, .perfil-btn>button p, .perfil-btn>button span { color:white !important; }
+
+    .divider { border:none; height:1px; background:linear-gradient(to right,transparent,#FCD34D,transparent); margin:20px 0; }
+    .questao-box { background:#FFFFFF; border:2px solid #FCD34D; border-radius:14px; padding:20px; margin-bottom:16px; }
+    .stApp .questao-box, .stApp .questao-box p, .stApp .questao-box span, .stApp .questao-box div { color:#1A1A2E !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# CACHE
-# ─────────────────────────────────────────────
+# ─── CACHE ───
 @st.cache_resource
 def get_cache_tutor():
     return {"perfis": {}}
-
 _cache = get_cache_tutor()
 
-# ─────────────────────────────────────────────
-# PERSISTÊNCIA LOCAL (JSON)
-# ─────────────────────────────────────────────
-CHAVES_SALVAR = [
-    'usuario', 'historico_estudos', 'biblioteca_materiais',
-    'concurso_foco', 'materias_foco', 'horas_disponiveis',
-    'nivel_conhecimento', 'data_prova', 'pontuacao_total',
-    'questoes_respondidas', 'questoes_certas',
+# ─── NÍVEIS E XP ───
+NIVEIS = [
+    (0,    "Iniciante",   "🌱"),
+    (100,  "Aprendiz",    "📚"),
+    (300,  "Persistente", "💪"),
+    (600,  "Estudioso",   "🎯"),
+    (1000, "Especialista","⭐"),
+    (1500, "Elite",       "🏆"),
+    (2500, "Aprovado",    "🎓"),
+]
+XP_ATIVIDADES = {
+    'questao_certa': 10, 'questao_errada': 2, 'resumo': 20,
+    'flashcard': 15, 'simulado': 50, 'revisao': 15,
+    'plano': 25, 'mapa_mental': 20, 'missao_dia': 30,
+}
+
+def calcular_nivel(xp: int):
+    nivel_atual = NIVEIS[0]
+    for req_xp, nome, emoji in NIVEIS:
+        if xp >= req_xp:
+            nivel_atual = (req_xp, nome, emoji)
+    return nivel_atual
+
+def xp_proximo_nivel(xp: int):
+    for i, (req_xp, nome, emoji) in enumerate(NIVEIS):
+        if xp < req_xp:
+            return req_xp
+    return NIVEIS[-1][0]
+
+# ─── CONQUISTAS ───
+CONQUISTAS_DEF = [
+    ("primeira_questao",   "🎯 Primeira Questão",      "Respondeu sua primeira questão"),
+    ("questoes_100",       "💯 Centenário",             "100 questões respondidas"),
+    ("questoes_1000",      "🏆 Guerreiro",              "1.000 questões respondidas"),
+    ("primeiro_resumo",    "📝 Primeiro Resumo",        "Criou seu primeiro resumo"),
+    ("primeiro_plano",     "📅 Planejador",             "Criou seu primeiro plano de estudos"),
+    ("primeiro_simulado",  "📊 Simulador",              "Realizou seu primeiro simulado"),
+    ("streak_7",           "🔥 7 Dias",                 "7 dias consecutivos de estudo"),
+    ("streak_30",          "⚡ 30 Dias",                "30 dias consecutivos de estudo"),
+    ("horas_100",          "⏱️ 100 Horas",              "100 horas de estudo acumuladas"),
+    ("acerto_90",          "🎯 Mira Certeira",          "Taxa de acerto acima de 90%"),
+    ("especialista_mat",   "🔢 Especialista em Matemática", "Acerto >80% em Matemática"),
+    ("especialista_port",  "📖 Especialista em Português",  "Acerto >80% em Português"),
+    ("especialista_dir",   "⚖️ Especialista em Direito",    "Acerto >80% em Direito"),
+    ("nivel_elite",        "🌟 Elite",                  "Atingiu o nível Elite"),
+    ("aprovado",           "🎓 Aprovado",               "Atingiu o nível Aprovado"),
 ]
 
-def gerar_json_sessao() -> str:
+def verificar_conquistas():
+    conquistadas = st.session_state.get('conquistas', [])
+    novas = []
+    q = st.session_state.questoes_respondidas
+    xp = st.session_state.pontuacao_total
+    streak = st.session_state.get('streak_atual', 0)
+    horas = st.session_state.get('horas_acumuladas', 0)
+    taxa = (st.session_state.questoes_certas / max(q,1)) * 100
+
+    checks = [
+        ("primeira_questao", q >= 1),
+        ("questoes_100", q >= 100),
+        ("questoes_1000", q >= 1000),
+        ("primeiro_resumo", any(e['tipo']=='Resumo' for e in st.session_state.historico_estudos)),
+        ("primeiro_plano", any(e['tipo']=='Plano' for e in st.session_state.historico_estudos)),
+        ("primeiro_simulado", any(e['tipo']=='Simulado' for e in st.session_state.historico_estudos)),
+        ("streak_7", streak >= 7),
+        ("streak_30", streak >= 30),
+        ("horas_100", horas >= 100),
+        ("acerto_90", taxa >= 90 and q >= 20),
+        ("nivel_elite", xp >= 1500),
+        ("aprovado", xp >= 2500),
+    ]
+    for chave, condicao in checks:
+        if condicao and chave not in conquistadas:
+            conquistadas.append(chave)
+            novas.append(chave)
+    st.session_state['conquistas'] = conquistadas
+    return novas
+
+def calcular_indice_preparacao():
+    q = st.session_state.questoes_respondidas
+    xp = st.session_state.pontuacao_total
+    streak = st.session_state.get('streak_atual', 0)
+    horas = st.session_state.get('horas_acumuladas', 0)
+    taxa = (st.session_state.questoes_certas / max(q,1)) * 100 if q > 0 else 0
+
+    score = 0
+    score += min(taxa * 0.35, 35)
+    score += min((q / 500) * 25, 25)
+    score += min((horas / 200) * 20, 20)
+    score += min((streak / 30) * 10, 10)
+    score += min((xp / 2000) * 10, 10)
+    return int(min(score, 100))
+
+def classificar_indice(idx):
+    if idx >= 85: return "Elite", "Muito Alta", "#059669"
+    if idx >= 70: return "Avançado", "Alta", "#16A34A"
+    if idx >= 55: return "Intermediário", "Moderada", "#D97706"
+    if idx >= 40: return "Básico", "Baixa", "#EA580C"
+    return "Iniciante", "Muito Baixa", "#DC2626"
+
+MOTIVACOES = [
+    "Cada questão respondida hoje é um passo que seu concorrente não deu.",
+    "A aprovação não acontece em um dia — ela acontece em cada dia.",
+    "Disciplina é escolher, repetidamente, o que importa sobre o que é fácil.",
+    "O estudo de hoje é o cargo de amanhã.",
+    "Você não está competindo com os outros — está competindo com quem você era ontem.",
+    "Consistência vence talento quando o talento não é consistente.",
+    "Cada hora estudada reduz a distância entre você e a aprovação.",
+    "A banca não mede esforço — mede domínio. Domine.",
+    "O candidato que estuda agora é o servidor que comemora depois.",
+    "Cansaço é temporário. Aprovação é permanente.",
+]
+
+# ─── PERSISTÊNCIA ───
+CHAVES_SALVAR = [
+    'usuario','historico_estudos','biblioteca_materiais',
+    'concurso_foco','materias_foco','horas_disponiveis',
+    'nivel_conhecimento','data_prova','cargo_foco','nota_necessaria',
+    'dias_disponiveis','experiencia_anterior','maior_dificuldade',
+    'maior_facilidade','metodo_preferido','instituicao',
+    'pontuacao_total','questoes_respondidas','questoes_certas',
+    'streak_atual','maior_streak','horas_acumuladas',
+    'ultima_atividade','dias_estudo','conquistas',
+    'radar_materias','missao_hoje','meta_semanal_h',
+    'meta_semanal_q','horas_semana','questoes_semana',
+    'historico_simulados',
+]
+
+def gerar_json_sessao():
     dados = {k: st.session_state.get(k) for k in CHAVES_SALVAR}
     dados['salvo_em'] = datetime.now().strftime('%d/%m/%Y %H:%M')
     return json.dumps(dados, ensure_ascii=False, indent=2, default=str)
 
-def carregar_json_sessao(dados: dict):
+def carregar_json_sessao(dados):
     for k in CHAVES_SALVAR:
         if k in dados:
             st.session_state[k] = dados[k]
 
-def salvar_perfil_cache(usuario: str):
-    _cache["perfis"][usuario] = {k: st.session_state.get(k) for k in CHAVES_SALVAR}
+def salvar_perfil_cache(u):
+    _cache["perfis"][u] = {k: st.session_state.get(k) for k in CHAVES_SALVAR}
 
-def perfis_salvos() -> list:
+def perfis_salvos():
     return list(_cache["perfis"].keys())
 
-def carregar_perfil_cache(usuario: str) -> dict | None:
-    return _cache["perfis"].get(usuario)
+def carregar_perfil_cache(u):
+    return _cache["perfis"].get(u)
 
-def salvar_estudo(tipo: str, materia: str, conteudo: str):
+def salvar_estudo(tipo, materia, conteudo):
     st.session_state.historico_estudos.append({
-        'data':    datetime.now().strftime('%d/%m %H:%M'),
-        'tipo':    tipo,
-        'materia': materia,
-        'conteudo': conteudo,
+        'data': datetime.now().strftime('%d/%m %H:%M'),
+        'tipo': tipo, 'materia': materia, 'conteudo': conteudo,
     })
+    st.session_state['ultima_atividade'] = f"{tipo} — {materia}"
+    st.session_state['dias_estudo'] = st.session_state.get('dias_estudo', 0) + 1
 
-# --- INICIALIZAÇÃO DE ESTADO ---
+def ganhar_xp(atividade: str, quantidade: int = 1):
+    xp = XP_ATIVIDADES.get(atividade, 10) * quantidade
+    st.session_state.pontuacao_total = st.session_state.get('pontuacao_total', 0) + xp
+    novas = verificar_conquistas()
+    return xp, novas
+
+def atualizar_streak():
+    hoje = date.today().isoformat()
+    ultimo_dia = st.session_state.get('ultimo_dia_estudo', '')
+    if ultimo_dia == hoje:
+        return
+    ontem = (date.today() - timedelta(days=1)).isoformat()
+    if ultimo_dia == ontem:
+        st.session_state.streak_atual = st.session_state.get('streak_atual', 0) + 1
+    else:
+        st.session_state.streak_atual = 1
+    if st.session_state.streak_atual > st.session_state.get('maior_streak', 0):
+        st.session_state.maior_streak = st.session_state.streak_atual
+    st.session_state['ultimo_dia_estudo'] = hoje
+
+# ─── DEFAULTS ───
 defaults = {
-    'etapa':               "Login",
-    'usuario':             "",
-    'api_key':             "",
-    'pagina':              "Home",
-    'historico_estudos':   [],
-    'biblioteca_materiais':[],
-    'concurso_foco':       "",
-    'materias_foco':       "",
-    'horas_disponiveis':   "2",
-    'nivel_conhecimento':  "Iniciante",
-    'data_prova':          "",
-    'pontuacao_total':     0,
-    'questoes_respondidas':0,
-    'questoes_certas':     0,
-    'questoes_ativas':     [],
-    'respondendo_idx':     0,
-    'respostas_sessao':    [],
+    'etapa': "Login", 'usuario': "", 'api_key': "", 'pagina': "Home",
+    'historico_estudos': [], 'biblioteca_materiais': [],
+    'concurso_foco': "", 'materias_foco': "", 'horas_disponiveis': "2",
+    'nivel_conhecimento': "Iniciante", 'data_prova': "", 'cargo_foco': "",
+    'nota_necessaria': "", 'dias_disponiveis': "5", 'experiencia_anterior': "Nenhuma",
+    'maior_dificuldade': "", 'maior_facilidade': "", 'metodo_preferido': "Misto",
+    'instituicao': "",
+    'pontuacao_total': 0, 'questoes_respondidas': 0, 'questoes_certas': 0,
+    'streak_atual': 0, 'maior_streak': 0, 'horas_acumuladas': 0,
+    'ultima_atividade': "Nenhuma", 'dias_estudo': 0, 'conquistas': [],
+    'radar_materias': {}, 'missao_hoje': None, 'ultimo_dia_estudo': '',
+    'meta_semanal_h': 10, 'meta_semanal_q': 100,
+    'horas_semana': 0, 'questoes_semana': 0,
+    'questoes_ativas': [], 'respondendo_idx': 0, 'respostas_sessao': [],
+    'historico_simulados': [],
 }
 for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# --- MOTOR DE IA ---
+# ─── MOTOR DE IA ───
 def tutor_ia(prompt: str, system_extra: str = "") -> str:
     try:
         client = Groq(api_key=st.session_state.api_key)
-        system = f"""Você é um tutor especialista em concursos públicos e estudos no Brasil.
-Usuário: {st.session_state.usuario}.
-Concurso/área foco: {st.session_state.concurso_foco or 'não informado'}.
-{system_extra}
-Seja didático, claro e motivador. Use exemplos práticos.
-Foque no que cai mais em provas. Escreva em português brasileiro."""
+        perfil = (
+            f"Aluno: {st.session_state.usuario}. "
+            f"Concurso: {st.session_state.concurso_foco or 'não definido'}. "
+            f"Cargo: {st.session_state.cargo_foco or 'não definido'}. "
+            f"Nível: {st.session_state.nivel_conhecimento}. "
+            f"Matérias foco: {st.session_state.materias_foco or 'não definidas'}. "
+            f"Maior dificuldade: {st.session_state.maior_dificuldade or 'não informada'}. "
+            f"Método preferido: {st.session_state.metodo_preferido}. "
+            f"Índice de preparação: {calcular_indice_preparacao()}%. "
+            f"XP: {st.session_state.pontuacao_total}. "
+            f"Taxa de acerto: {int(st.session_state.questoes_certas/max(st.session_state.questoes_respondidas,1)*100)}%."
+        )
+        system = (
+            f"Você é o Tutor de Concursos IA — um mentor estratégico de preparação para concursos públicos brasileiros. "
+            f"Você acompanha toda a jornada do aluno, identifica padrões, explica o raciocínio por trás de cada decisão "
+            f"e mantém o foco no objetivo final: a aprovação. "
+            f"Sempre baseie conselhos no perfil real do aluno. Nunca seja genérico. "
+            f"Português do Brasil. {perfil} {system_extra}"
+        )
         response = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user",   "content": prompt},
-            ],
+            messages=[{"role":"system","content":system},{"role":"user","content":prompt}],
             model="llama-3.3-70b-versatile",
         )
         return response.choices[0].message.content
     except Exception as e:
         return f"⚠️ Erro na API: {e}"
 
-# --- BARRA DE SALVAR ---
+# ─── BARRA SALVAR ───
 def barra_salvar():
     salvar_perfil_cache(st.session_state.usuario)
-    nome_usuario = st.session_state.usuario.lower().replace(' ', '_') or 'minha_sessao'
-    total = len(st.session_state.historico_estudos)
-    acertos = st.session_state.questoes_certas
-    respondidas = st.session_state.questoes_respondidas
-    taxa = round(acertos / respondidas * 100) if respondidas > 0 else 0
-
+    nome_u = st.session_state.usuario.lower().replace(' ','_') or 'sessao'
     col_info, col_btn = st.columns([4, 2])
     with col_info:
+        xp = st.session_state.pontuacao_total
+        _, nivel_nome, nivel_emoji = calcular_nivel(xp)
+        concurso = st.session_state.concurso_foco or "—"
         st.markdown(
             f"<div style='background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;"
             f"padding:10px 14px;font-size:0.84em;color:#1A1A2E;line-height:1.6;'>"
-            f"💾 <strong>Antes de sair, salve seus dados no computador.</strong><br>"
-            f"<span style='color:#888;font-size:0.88em;'>{total} materiais gerados · "
-            f"{respondidas} questões respondidas · {taxa}% de acerto</span>"
-            f"</div>",
-            unsafe_allow_html=True
-        )
+            f"💾 <strong>Salve seus dados antes de sair.</strong><br>"
+            f"<span style='color:#D97706;font-size:0.88em;'>{nivel_emoji} {nivel_nome} · "
+            f"{xp} XP · {concurso}</span>"
+            f"</div>", unsafe_allow_html=True)
     with col_btn:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.download_button(
-            label="💾 SALVAR MEUS DADOS (.json)",
-            data=gerar_json_sessao(),
-            file_name=f"tutor_concursos_{nome_usuario}.json",
-            mime="application/json",
-            use_container_width=True,
-        )
+        st.download_button("💾 SALVAR DADOS (.json)", data=gerar_json_sessao(),
+            file_name=f"tutor_{nome_u}.json", mime="application/json", use_container_width=True)
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
+
 # ============================================================
-# TELA: LOGIN
+# LOGIN
 # ============================================================
 if st.session_state.etapa == "Login":
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        st.title("📚 TUTOR DE CONCURSOS")
-        st.markdown("**Seu Tutor de Estudos e Concursos com Inteligência Artificial**")
-
+        st.title("🎓 TUTOR DE CONCURSOS IA")
+        st.markdown("**Seu mentor estratégico de preparação para concursos públicos.**")
+        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;
-        padding:10px 16px;margin:10px 0 16px 0;font-size:0.88em;color:#1A1A2E;line-height:1.6;">
+        padding:12px 16px;margin-bottom:16px;font-size:0.88em;color:#1A1A2E;line-height:1.6;">
         🔒 <strong>ACESSO RESTRITO A CLIENTES DO QUIZ COM PRÊMIOS</strong><br>
-        🔗 <a href="https://quizcompremios.com.br/" target="_blank"
-        style="color:#D97706;font-weight:600;text-decoration:none;">quizcompremios.com.br</a>
+        🔗 <a href='https://quizcompremios.com.br/' target='_blank'
+        style='color:#D97706;font-weight:600;text-decoration:none;'>quizcompremios.com.br</a>
+        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:10px;
+        padding:10px 16px;margin-bottom:16px;font-size:0.82em;color:#14532D;line-height:1.7;">
+        🔒 <strong>Privacidade:</strong> seus dados ficam apenas no seu computador.<br>
+        📥 Exporte o backup a qualquer momento. Nada é enviado para servidores.
         </div>""", unsafe_allow_html=True)
 
-        st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-
-        # ── PERFIS SALVOS NO SERVIDOR ─────────────────────────
         perfis = perfis_salvos()
         if perfis:
-            st.markdown("#### 📚 Tutor de Concursos — clique para acessar seus dados")
-            st.caption("Seus dados e progresso estão no servidor. Um clique e você entra.")
-            chave_rapida = st.text_input("🔑 Sua Chave API da Groq:", type="password", key="chave_rapida")
-            for nome_p in perfis:
-                dados_p      = carregar_perfil_cache(nome_p)
-                concurso_p   = dados_p.get('concurso_foco', '') if dados_p else ''
-                respondidas_p= dados_p.get('questoes_respondidas', 0) if dados_p else 0
-                certas_p     = dados_p.get('questoes_certas', 0) if dados_p else 0
-                taxa_p       = round(certas_p / respondidas_p * 100) if respondidas_p > 0 else 0
+            chave_r = st.text_input("🔑 Sua Chave API da Groq:", type="password", key="chave_rapida")
+            for np in perfis:
+                dp = carregar_perfil_cache(np)
+                xp_p = dp.get('pontuacao_total',0) if dp else 0
+                _, nv, em = calcular_nivel(xp_p)
                 st.markdown('<div class="perfil-btn">', unsafe_allow_html=True)
-                if st.button(
-                    f"📚 {nome_p}  —  {concurso_p or 'concurso não definido'}  ·  {respondidas_p} questões  ·  {taxa_p}% acerto",
-                    key=f"perfil_{nome_p}",
-                    use_container_width=True
-                ):
-                    if not chave_rapida.strip():
-                        st.warning("Cole sua chave API acima antes de entrar.")
+                if st.button(f"🎓 {np}  ·  {em} {nv}  ·  {xp_p} XP", key=f"perfil_{np}", use_container_width=True):
+                    if not chave_r.strip():
+                        st.warning("Cole sua chave API acima.")
                     else:
-                        st.session_state.usuario = nome_p
-                        st.session_state.api_key = chave_rapida
-                        carregar_json_sessao(dados_p)
+                        st.session_state.usuario = np
+                        st.session_state.api_key = chave_r
+                        carregar_json_sessao(dp)
                         st.session_state.etapa = "App"
                         st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-            st.markdown("**Ou entre com outro nome:**")
 
-        nome  = st.text_input("Seu Nome:")
+        nome = st.text_input("Seu Nome:", key="input_nome_login")
         chave = st.text_input("Sua Chave API da Groq:", type="password", key="chave_nova")
 
         if not perfis:
-            st.markdown("""<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;
-            padding:12px 16px;font-size:0.86em;color:#1A1A2E;line-height:1.7;margin:10px 0;">
-            📥 <strong>Seus dados sumiram?</strong> Isso acontece quando o servidor reinicia.<br>
-            Selecione abaixo o arquivo <strong>.json</strong> que você salvou antes — seu progresso volta completo.
-            </div>""", unsafe_allow_html=True)
-            arq_login = st.file_uploader("Carregar meus dados salvos (.json):", type=["json"], key="upload_login")
+            arq = st.file_uploader("Restaurar Backup (.json):", type=["json"], key="upload_login")
         else:
-            arq_login = None
+            arq = None
 
         dados_login = None
-        if arq_login is not None:
+        if arq is not None:
             try:
-                dados_login = json.load(arq_login)
-                nome_login  = dados_login.get('usuario', '')
-                st.success(f"✅ Dados de **{nome_login}** reconhecidos! Clique em Entrar.")
+                dados_login = json.load(arq)
+                st.success(f"✅ Backup de **{dados_login.get('usuario','')}** reconhecido!")
             except Exception:
                 st.error("Arquivo inválido.")
-                dados_login = None
 
-        if st.button("✨ ENTRAR E ESTUDAR"):
+        if st.button("🎓 ENTRAR E ESTUDAR"):
             if nome and chave:
                 st.session_state.usuario = nome
                 st.session_state.api_key = chave
@@ -306,55 +423,53 @@ if st.session_state.etapa == "Login":
                 st.rerun()
             else:
                 st.warning("Preencha nome e chave API.")
+        st.markdown("🔑 Crie grátis em <a href='https://console.groq.com/keys' target='_blank' style='color:#D97706;'>console.groq.com/keys</a>", unsafe_allow_html=True)
 
-        st.markdown("🔑 Não tem chave Groq? Crie grátis em <a href='https://console.groq.com/keys' target='_blank' style='color:#D97706;font-weight:600;'>console.groq.com/keys</a>", unsafe_allow_html=True)
 
 # ============================================================
-# TELA: APP
+# APP
 # ============================================================
 elif st.session_state.etapa == "App":
 
+    atualizar_streak()
     barra_salvar()
 
-    # NAVBAR
-    cols = st.columns(9)
-    paginas = [
-        ("🏠", "Home"),
-        ("📅", "Plano"),
-        ("📖", "Resumo"),
-        ("❓", "Questoes"),
-        ("🧠", "Memoria"),
-        ("⚡", "Revisao"),
-        ("💬", "Tutor"),
-        ("📚", "Biblioteca"),
-        ("📈", "Progresso"),
-    ]
-    nomes_paginas = {
-        "Home":      "Painel Principal",
-        "Plano":     "Plano de Estudos",
-        "Resumo":    "Gerador de Resumos",
-        "Questoes":  "Simulado de Questões",
-        "Memoria":   "Técnicas de Memorização",
-        "Revisao":   "Revisão Espaçada",
-        "Tutor":     "Tutor ao Vivo",
-        "Biblioteca":"Biblioteca de Materiais",
-        "Progresso": "Meu Progresso",
-    }
-    for i, (icone, pagina) in enumerate(paginas):
-        if cols[i].button(icone, key=f"nav_{pagina}", help=nomes_paginas[pagina]):
-            st.session_state.pagina = pagina
-            st.rerun()
+    # NAVBAR linha 1
+    cols1 = st.columns(9)
+    nav1 = [("🏠","Home"),("📊","Painel"),("📋","Perfil"),("📅","Plano"),("📝","Resumo"),
+            ("❓","Questoes"),("🧠","Memoria"),("🔄","Revisao"),("🎯","Simulado")]
+    lb1 = {"Home":"Início","Painel":"Painel Executivo","Perfil":"Meu Perfil Completo",
+           "Plano":"Plano de Estudos","Resumo":"Criar Resumo","Questoes":"Resolver Questões",
+           "Memoria":"Flashcards","Revisao":"Revisão Espaçada","Simulado":"Simulado Inteligente"}
+    for i,(ic,pg) in enumerate(nav1):
+        if cols1[i].button(ic, key=f"nav1_{pg}", help=lb1[pg]):
+            st.session_state.pagina = pg; st.rerun()
+
+    # NAVBAR linha 2
+    cols2 = st.columns(9)
+    nav2 = [("💬","Tutor"),("📚","Biblioteca"),("📈","Progresso"),("🏆","Conquistas"),
+            ("🎮","Evolucao"),("📡","Radar"),("📊","Relatorio"),("🧭","Diagnostico"),("❤️","Salvos")]
+    lb2 = {"Tutor":"Tutor Inteligente","Biblioteca":"Biblioteca de Materiais",
+           "Progresso":"Estatísticas e Progresso","Conquistas":"Minhas Conquistas",
+           "Evolucao":"XP e Gamificação","Radar":"Radar das Disciplinas",
+           "Relatorio":"Relatório Semanal","Diagnostico":"Diagnóstico Inteligente","Salvos":"Materiais Salvos"}
+    for i,(ic,pg) in enumerate(nav2):
+        if cols2[i].button(ic, key=f"nav2_{pg}", help=lb2[pg]):
+            st.session_state.pagina = pg; st.rerun()
 
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-    # ========================
+    # ──────────────────────────────────────────
     # HOME
-    # ========================
+    # ──────────────────────────────────────────
     if st.session_state.pagina == "Home":
-        col_u, col_r = st.columns([3, 1])
+        col_u, col_r = st.columns([3,1])
         with col_u:
-            st.title(f"Olá, {st.session_state.usuario}! 📚")
-            st.markdown("<span class='badge'>Modo Estudo</span>", unsafe_allow_html=True)
+            st.title(f"🎓 Olá, {st.session_state.usuario}!")
+            concurso = st.session_state.concurso_foco or "Não definido"
+            xp = st.session_state.pontuacao_total
+            _, nivel_nome, nivel_emoji = calcular_nivel(xp)
+            st.markdown(f"<span class='badge'>{nivel_emoji} {nivel_nome}</span> <span class='badge-azul'>🎯 {concurso}</span>", unsafe_allow_html=True)
         with col_r:
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🚪 Sair"):
@@ -362,83 +477,337 @@ elif st.session_state.etapa == "App":
                     del st.session_state[k]
                 st.rerun()
 
-        # AVISO SE DADOS SUMIRAM
-        total_h = len(st.session_state.historico_estudos)
-        if total_h == 0 and st.session_state.questoes_respondidas == 0:
-            st.markdown("""<div style="background:#FEF3C7;border:2px solid #F59E0B;border-radius:12px;
-            padding:12px 18px;margin-bottom:4px;color:#000;font-size:0.9em;font-weight:600;">
-            ⚠️ Seus dados não estão mais no servidor.
-            </div>""", unsafe_allow_html=True)
-            arq_home = st.file_uploader("Carregar meus dados salvos (.json):", type=["json"], key="upload_home")
-            if arq_home is not None:
-                try:
-                    dados_home = json.load(arq_home)
-                    carregar_json_sessao(dados_home)
-                    salvar_perfil_cache(st.session_state.usuario)
-                    st.success("✅ Dados e progresso recuperados!")
+        if not st.session_state.concurso_foco:
+            st.markdown("""<div style="background:#FFFBEB;border:2px solid #F59E0B;border-radius:12px;
+            padding:16px 20px;margin-bottom:16px;">
+            <span style='font-size:1em;font-weight:600;color:#92400E;'>
+            ⚡ Comece pelo 📋 Perfil — configure seu concurso, matérias e data da prova para ativar todos os recursos.
+            </span></div>""", unsafe_allow_html=True)
+        else:
+            # RECUPERAR BACKUP
+            if len(st.session_state.historico_estudos) == 0:
+                arq_home = st.file_uploader("Restaurar Backup (.json):", type=["json"], key="upload_home")
+                if arq_home is not None:
+                    try:
+                        d = json.load(arq_home)
+                        carregar_json_sessao(d)
+                        salvar_perfil_cache(st.session_state.usuario)
+                        st.success("✅ Backup restaurado!")
+                        st.rerun()
+                    except Exception:
+                        st.error("Arquivo inválido.")
+
+        # CABEÇALHO INSTITUCIONAL
+        dias_restantes = "—"
+        if st.session_state.data_prova:
+            try:
+                dp = datetime.strptime(st.session_state.data_prova, "%Y-%m-%d").date()
+                dias_restantes = (dp - date.today()).days
+                if dias_restantes < 0:
+                    dias_restantes = "Prova passada"
+            except Exception:
+                dias_restantes = "—"
+
+        ultima = st.session_state.get('ultima_atividade', 'Nenhuma')
+        st.markdown(f"""
+        <div class='painel-exec'>
+            <div style='font-size:0.85em;opacity:0.7;letter-spacing:2px;margin-bottom:8px;'>🎓 MENTOR INTELIGENTE DE ESTUDOS</div>
+            <div style='font-size:1.1em;opacity:0.7;margin-bottom:16px;'>Seu treinador pessoal com Inteligência Artificial · <span style='color:#22C55E;'>🟢 IA Online</span></div>
+            <div style='display:flex;flex-wrap:wrap;gap:20px;'>
+                <div><div style='font-size:0.75em;opacity:0.6;'>🎯 OBJETIVO</div><div style='font-size:1.1em;font-weight:700;'>{st.session_state.concurso_foco or "—"} {("— " + st.session_state.cargo_foco) if st.session_state.cargo_foco else ""}</div></div>
+                <div><div style='font-size:0.75em;opacity:0.6;'>📅 DIAS RESTANTES</div><div style='font-size:1.1em;font-weight:700;'>{dias_restantes}</div></div>
+                <div><div style='font-size:0.75em;opacity:0.6;'>🔥 SEQUÊNCIA</div><div style='font-size:1.1em;font-weight:700;'>{st.session_state.get("streak_atual",0)} dias</div></div>
+                <div><div style='font-size:0.75em;opacity:0.6;'>📖 ÚLTIMA ATIVIDADE</div><div style='font-size:1.1em;font-weight:700;'>{ultima}</div></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ÍNDICE DE PREPARAÇÃO
+        idx = calcular_indice_preparacao()
+        nivel_idx, prob, cor = classificar_indice(idx)
+        col_idx, col_mot = st.columns([1, 2])
+        with col_idx:
+            st.markdown(f"""
+            <div class='indice-box'>
+                <div style='font-size:0.85em;opacity:0.8;'>ÍNDICE DE PREPARAÇÃO</div>
+                <div class='indice-numero'>{idx}%</div>
+                <div style='font-size:0.9em;'>Nível: <strong>{nivel_idx}</strong></div>
+                <div style='font-size:0.85em;opacity:0.8;'>Prob. estimada: {prob}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_mot:
+            frase_mot = random.choice(MOTIVACOES)
+            streak = st.session_state.get('streak_atual', 0)
+            if streak > 0:
+                frase_mot = f"Você está há {streak} dias consecutivos estudando. {frase_mot}"
+            st.markdown(f"<div class='card' style='height:120px;display:flex;align-items:center;'><em>💡 {frase_mot}</em></div>", unsafe_allow_html=True)
+
+        # DASHBOARD
+        st.markdown("### 📊 Dashboard")
+        q = st.session_state.questoes_respondidas
+        c_q = st.session_state.questoes_certas
+        e_q = q - c_q
+        taxa = int(c_q/max(q,1)*100)
+        xp = st.session_state.pontuacao_total
+        horas = st.session_state.get('horas_acumuladas', 0)
+        resumos = sum(1 for e in st.session_state.historico_estudos if e['tipo']=='Resumo')
+        flashcards = sum(1 for e in st.session_state.historico_estudos if e['tipo']=='Flashcard')
+        simulados = sum(1 for e in st.session_state.historico_estudos if e['tipo']=='Simulado')
+        cronogramas = sum(1 for e in st.session_state.historico_estudos if e['tipo']=='Plano')
+
+        d1,d2,d3,d4,d5,d6 = st.columns(6)
+        d1.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.get('streak_atual',0)}</div><div>Dias seguidos</div></div>", unsafe_allow_html=True)
+        d2.markdown(f"<div class='stat-box'><div class='stat-numero'>{horas:.0f}h</div><div>Horas acumuladas</div></div>", unsafe_allow_html=True)
+        d3.markdown(f"<div class='stat-box'><div class='stat-numero'>{q}</div><div>Questões</div></div>", unsafe_allow_html=True)
+        d4.markdown(f"<div class='stat-box'><div class='stat-numero'>{taxa}%</div><div>Acertos</div></div>", unsafe_allow_html=True)
+        d5.markdown(f"<div class='stat-box'><div class='stat-numero'>{resumos}</div><div>Resumos</div></div>", unsafe_allow_html=True)
+        d6.markdown(f"<div class='stat-box'><div class='stat-numero'>{xp}</div><div>XP Total</div></div>", unsafe_allow_html=True)
+
+        d7,d8,d9,d10,d11,d12 = st.columns(6)
+        d7.markdown(f"<div class='stat-box'><div class='stat-numero'>{flashcards}</div><div>Flashcards</div></div>", unsafe_allow_html=True)
+        d8.markdown(f"<div class='stat-box'><div class='stat-numero'>{simulados}</div><div>Simulados</div></div>", unsafe_allow_html=True)
+        d9.markdown(f"<div class='stat-box'><div class='stat-numero'>{cronogramas}</div><div>Planos</div></div>", unsafe_allow_html=True)
+        d10.markdown(f"<div class='stat-box'><div class='stat-numero'>{c_q}</div><div>Certas</div></div>", unsafe_allow_html=True)
+        d11.markdown(f"<div class='stat-box'><div class='stat-numero'>{e_q}</div><div>Erradas</div></div>", unsafe_allow_html=True)
+        d12.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.get('maior_streak',0)}</div><div>Recorde dias</div></div>", unsafe_allow_html=True)
+
+        # MISSÃO DO DIA
+        st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+        col_miss, col_meta = st.columns(2)
+        with col_miss:
+            st.markdown("### ⚡ Missão do Dia")
+            if not st.session_state.get('missao_hoje'):
+                if st.button("⚡ GERAR MISSÃO DO DIA"):
+                    with st.spinner("Gerando missão personalizada..."):
+                        materia_critica = st.session_state.maior_dificuldade or st.session_state.materias_foco or "a matéria mais importante do seu concurso"
+                        missao_prompt = (
+                            f"Crie uma missão de estudo para hoje para o aluno preparando {st.session_state.concurso_foco or 'concurso público'}.\n"
+                            f"Horas disponíveis: {st.session_state.horas_disponiveis}h. Maior dificuldade: {materia_critica}.\n"
+                            f"Formato:\n\n"
+                            f"⚡ MISSÃO DO DIA\n\n"
+                            f"[3-4 tarefas específicas com tempo estimado cada]\n\n"
+                            f"⏱️ Tempo total previsto: [X]h[Y]min\n"
+                            f"🏆 Recompensa: +[XP] XP\n\n"
+                            f"💡 Por que essa missão hoje: [1 linha explicando a estratégia]"
+                        )
+                        missao = tutor_ia(missao_prompt)
+                        st.session_state.missao_hoje = missao
+                        st.rerun()
+            else:
+                st.markdown(f"<div class='missao-box'>{st.session_state.missao_hoje}</div>", unsafe_allow_html=True)
+                col_ok, col_re = st.columns(2)
+                with col_ok:
+                    if st.button("✅ MISSÃO CONCLUÍDA!", key="missao_ok"):
+                        xp_g, novas = ganhar_xp('missao_dia')
+                        st.success(f"🏆 +{xp_g} XP! Excelente trabalho!")
+                        st.session_state.missao_hoje = None
+                        st.rerun()
+                with col_re:
+                    if st.button("🔄 Nova missão", key="missao_re"):
+                        st.session_state.missao_hoje = None
+                        st.rerun()
+
+        with col_meta:
+            st.markdown("### 📆 Meta Semanal")
+            h_prev = st.session_state.get('meta_semanal_h', 10)
+            h_feito = st.session_state.get('horas_semana', 0)
+            q_prev = st.session_state.get('meta_semanal_q', 100)
+            q_feito = st.session_state.get('questoes_semana', 0)
+            pct_h = min(int(h_feito/max(h_prev,1)*100), 100)
+            pct_q = min(int(q_feito/max(q_prev,1)*100), 100)
+            st.markdown(f"**⏱️ Horas:** {h_feito}/{h_prev}h ({pct_h}%)")
+            st.progress(pct_h/100)
+            st.markdown(f"**❓ Questões:** {q_feito}/{q_prev} ({pct_q}%)")
+            st.progress(pct_q/100)
+            col_ma, col_mb = st.columns(2)
+            with col_ma:
+                if st.button("➕ +1h estudada"):
+                    st.session_state.horas_semana = h_feito + 1
+                    st.session_state.horas_acumuladas = st.session_state.get('horas_acumuladas',0) + 1
                     st.rerun()
-                except Exception:
-                    st.error("Arquivo inválido.")
-            st.markdown("<br>", unsafe_allow_html=True)
+            with col_mb:
+                if st.button("⚙️ Definir metas", key="def_metas"):
+                    st.session_state.pagina = "Progresso"; st.rerun()
 
-        # PERFIL DO ESTUDANTE
-        st.markdown("#### ⚙️ Configure seu perfil de estudos")
-        col_a, col_b = st.columns(2)
-        with col_a:
-            st.session_state.concurso_foco     = st.text_input("Concurso ou área de estudo:", value=st.session_state.concurso_foco, placeholder="ex: ENEM, PRF, Banco do Brasil, OAB, Medicina...")
-            st.session_state.materias_foco     = st.text_input("Matérias prioritárias:", value=st.session_state.materias_foco, placeholder="ex: Português, Matemática, Direito Constitucional...")
-            st.session_state.data_prova        = st.text_input("Data da prova (se souber):", value=st.session_state.data_prova, placeholder="ex: março/2025, em 6 meses...")
-        with col_b:
-            st.session_state.horas_disponiveis = st.selectbox("Horas disponíveis por dia:", ["1 hora","2 horas","3 horas","4 horas","5+ horas"], index=["1 hora","2 horas","3 horas","4 horas","5+ horas"].index(st.session_state.horas_disponiveis) if st.session_state.horas_disponiveis in ["1 hora","2 horas","3 horas","4 horas","5+ horas"] else 1)
-            st.session_state.nivel_conhecimento= st.selectbox("Seu nível atual:", ["Iniciante","Básico","Intermediário","Avançado"], index=["Iniciante","Básico","Intermediário","Avançado"].index(st.session_state.nivel_conhecimento) if st.session_state.nivel_conhecimento in ["Iniciante","Básico","Intermediário","Avançado"] else 0)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # MÉTRICAS
-        respondidas = st.session_state.questoes_respondidas
-        certas      = st.session_state.questoes_certas
-        taxa        = round(certas / respondidas * 100) if respondidas > 0 else 0
-        tipos = {}
-        for e in st.session_state.historico_estudos:
-            tipos[e['tipo']] = tipos.get(e['tipo'], 0) + 1
-
-        c1, c2, c3, c4, c5 = st.columns(5)
-        c1.markdown(f"<div class='stat-box'><div class='stat-numero'>{total_h}</div><div>Materiais gerados</div></div>", unsafe_allow_html=True)
-        c2.markdown(f"<div class='stat-box'><div class='stat-numero'>{respondidas}</div><div>Questões feitas</div></div>", unsafe_allow_html=True)
-        c3.markdown(f"<div class='stat-box'><div class='stat-numero'>{taxa}%</div><div>Taxa de acerto</div></div>", unsafe_allow_html=True)
-        c4.markdown(f"<div class='stat-box'><div class='stat-numero'>{tipos.get('Resumo',0)}</div><div>Resumos</div></div>", unsafe_allow_html=True)
-        c5.markdown(f"<div class='stat-box'><div class='stat-numero'>{tipos.get('Plano',0)}</div><div>Planos criados</div></div>", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("<div class='card'>💡 <em>'Não é quem estuda mais que passa. É quem estuda certo.'</em></div>", unsafe_allow_html=True)
-
-        st.markdown("### 🗺️ O que cada aba faz")
-        guia = {
-            "📅 Plano":          "Cria seu cronograma de estudos personalizado — dia a dia até a prova",
-            "📖 Resumo":         "Gera resumos completos de qualquer matéria ou tema específico",
-            "❓ Questões":        "Simulado com questões no estilo da prova — gabarito e explicação",
-            "🧠 Memória":         "Técnicas de memorização: mnemônicos, mapas mentais e associações",
-            "⚡ Revisão":         "Sistema de revisão espaçada — o que revisar hoje para não esquecer",
-            "💬 Tutor ao Vivo":   "Tire dúvidas sobre qualquer matéria com o tutor em tempo real",
-            "📚 Biblioteca":      "Seus resumos e materiais salvos organizados por matéria",
-        }
-        for aba, desc in guia.items():
-            st.markdown(f"**{aba}** — {desc}")
-
+        # ÚLTIMAS ATIVIDADES
         if st.session_state.historico_estudos:
-            st.markdown("### 🕐 Últimos Materiais Gerados")
+            st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+            st.markdown("### 🕐 Últimas Atividades")
             for item in reversed(st.session_state.historico_estudos[-4:]):
-                st.markdown(
-                    f"<div class='hist-item'>"
-                    f"<span class='badge'>{item['tipo']}</span> "
-                    f"<span class='badge-azul'>{item['materia'][:30]}</span> "
-                    f"<small style='color:#888'>{item['data']}</small></div>",
-                    unsafe_allow_html=True
-                )
+                st.markdown(f"<div class='hist-item'><span class='badge'>{item['tipo']}</span> <small style='color:#888'>{item['data']}</small><br><small>{item['materia'][:80]}</small></div>", unsafe_allow_html=True)
 
-    # ========================
-    # PLANO DE ESTUDOS
-    # ========================
+
+    # ──────────────────────────────────────────
+    # PAINEL EXECUTIVO
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "Painel":
+        st.header("📊 Painel Executivo")
+        idx = calcular_indice_preparacao()
+        nivel_idx, prob, cor = classificar_indice(idx)
+        xp = st.session_state.pontuacao_total
+        _, nivel_nome, nivel_emoji = calcular_nivel(xp)
+        q = st.session_state.questoes_respondidas
+        taxa = int(st.session_state.questoes_certas/max(q,1)*100)
+        horas = st.session_state.get('horas_acumuladas', 0)
+        streak = st.session_state.get('streak_atual', 0)
+        pct_meta = min(int(st.session_state.get('horas_semana',0)/max(st.session_state.get('meta_semanal_h',10),1)*100), 100)
+        dif = st.session_state.maior_dificuldade or "Não definida"
+
+        # Calcular maior evolução
+        materias_radar = st.session_state.get('radar_materias', {})
+        maior_evolucao = max(materias_radar.items(), key=lambda x: x[1], default=("—", 0))
+
+        st.markdown(f"""
+        <div class='painel-exec'>
+            <div style='font-size:1.3em;font-weight:700;margin-bottom:20px;letter-spacing:1px;'>🎓 PAINEL DO MENTOR — {st.session_state.usuario.upper()}</div>
+            <div style='display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;'>
+                <div style='text-align:center;background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;'>
+                    <div style='font-size:0.72em;opacity:0.6;'>OBJETIVO</div>
+                    <div style='font-size:1.1em;font-weight:700;'>{st.session_state.concurso_foco or "—"}</div>
+                </div>
+                <div style='text-align:center;background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;'>
+                    <div style='font-size:0.72em;opacity:0.6;'>ÍNDICE GERAL</div>
+                    <div style='font-size:1.8em;font-weight:700;'>{idx}%</div>
+                </div>
+                <div style='text-align:center;background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;'>
+                    <div style='font-size:0.72em;opacity:0.6;'>HORAS ESTUDADAS</div>
+                    <div style='font-size:1.8em;font-weight:700;'>{horas:.0f}h</div>
+                </div>
+                <div style='text-align:center;background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;'>
+                    <div style='font-size:0.72em;opacity:0.6;'>QUESTÕES</div>
+                    <div style='font-size:1.8em;font-weight:700;'>{q}</div>
+                </div>
+            </div>
+            <div style='display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;'>
+                <div style='text-align:center;background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;'>
+                    <div style='font-size:0.72em;opacity:0.6;'>TAXA DE ACERTO</div>
+                    <div style='font-size:1.8em;font-weight:700;'>{taxa}%</div>
+                </div>
+                <div style='text-align:center;background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;'>
+                    <div style='font-size:0.72em;opacity:0.6;'>NÍVEL</div>
+                    <div style='font-size:1.1em;font-weight:700;'>{nivel_emoji} {nivel_nome}</div>
+                </div>
+                <div style='text-align:center;background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;'>
+                    <div style='font-size:0.72em;opacity:0.6;'>DIAS CONSECUTIVOS</div>
+                    <div style='font-size:1.8em;font-weight:700;'>{streak}</div>
+                </div>
+                <div style='text-align:center;background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;'>
+                    <div style='font-size:0.72em;opacity:0.6;'>META DA SEMANA</div>
+                    <div style='font-size:1.8em;font-weight:700;'>{pct_meta}%</div>
+                </div>
+            </div>
+            <div style='background:rgba(255,255,255,0.06);border-radius:12px;padding:16px;'>
+                <div style='font-size:0.72em;opacity:0.6;margin-bottom:8px;'>🤖 RECOMENDAÇÃO DA IA</div>
+                <div style='font-size:0.95em;line-height:1.7;'>
+                    {'<strong>Maior dificuldade:</strong> ' + dif + '. ' if dif != 'Não definida' else ''}
+                    Índice de preparação: <strong>{idx}%</strong> — Probabilidade estimada: <strong>{prob}</strong>.
+                    {'Priorize ' + dif + ' nos próximos dias e mantenha questões diárias.' if dif != 'Não definida' else 'Configure seu perfil completo para recomendações personalizadas.'}
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("🤖 RECOMENDAÇÃO ESTRATÉGICA COMPLETA DA IA"):
+            with st.spinner("Analisando seu perfil completo..."):
+                prompt = (
+                    f"Analise o perfil completo deste candidato e dê uma recomendação estratégica detalhada.\n"
+                    f"Índice de preparação: {idx}%. Taxa de acerto: {taxa}%. Horas acumuladas: {horas}h. "
+                    f"Questões respondidas: {q}. Streak: {streak} dias.\n"
+                    f"Concurso: {st.session_state.concurso_foco}. Maior dificuldade: {dif}.\n\n"
+                    f"FORMATO:\n\n"
+                    f"📊 ANÁLISE ESTRATÉGICA\n\n"
+                    f"✅ PONTOS FORTES:\n[o que está bem]\n\n"
+                    f"⚠️ PONTOS CRÍTICOS:\n[o que precisa melhorar]\n\n"
+                    f"🎯 PRIORIDADES PARA ESTA SEMANA:\n[ordem de estudo com justificativa]\n\n"
+                    f"📈 PREVISÃO DE APROVAÇÃO:\n[estimativa honesta com base nos dados — sempre como estimativa, nunca garantia]\n\n"
+                    f"🚀 AÇÃO IMEDIATA:\n[o que fazer hoje]"
+                )
+                res = tutor_ia(prompt)
+                salvar_estudo("Análise Estratégica", "Painel Executivo", res)
+                st.markdown(f"<div class='card'>{res}</div>", unsafe_allow_html=True)
+
+    # ──────────────────────────────────────────
+    # PERFIL COMPLETO
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "Perfil":
+        st.header("📋 Meu Perfil Completo")
+        st.markdown("*Configure uma vez — o tutor usa tudo isso para personalizar cada resposta.*")
+
+        with st.form("form_perfil"):
+            st.markdown("#### 🎯 Objetivo")
+            col1, col2 = st.columns(2)
+            with col1:
+                p_concurso = st.text_input("Concurso:", value=st.session_state.concurso_foco, placeholder="ex: PRF, INSS, Receita Federal, TRT...")
+                p_cargo = st.text_input("Cargo:", value=st.session_state.cargo_foco, placeholder="ex: Policial Rodoviário Federal, Analista...")
+                p_instituicao = st.text_input("Instituição organizadora:", value=st.session_state.instituicao, placeholder="ex: CEBRASPE, FCC, VUNESP...")
+            with col2:
+                p_data = st.text_input("Data prevista da prova (AAAA-MM-DD):", value=st.session_state.data_prova, placeholder="ex: 2027-03-15")
+                p_nota = st.text_input("Nota mínima necessária:", value=st.session_state.nota_necessaria, placeholder="ex: 60 pontos ou 50%")
+                p_cidade = st.text_input("Cidade/UF onde fará a prova:", placeholder="ex: São Paulo - SP")
+
+            st.markdown("#### 📚 Estudos")
+            col3, col4 = st.columns(2)
+            with col3:
+                p_materias = st.text_area("Matérias do concurso:", value=st.session_state.materias_foco, height=100, placeholder="ex: Português, Matemática, Direito Constitucional, Informática...")
+                p_horas = st.selectbox("Horas disponíveis por dia:", ["1","2","3","4","5","6","8","10+"],
+                    index=["1","2","3","4","5","6","8","10+"].index(st.session_state.horas_disponiveis) if st.session_state.horas_disponiveis in ["1","2","3","4","5","6","8","10+"] else 1)
+                p_dias = st.selectbox("Dias disponíveis por semana:", ["3","4","5","6","7"],
+                    index=["3","4","5","6","7"].index(st.session_state.dias_disponiveis) if st.session_state.dias_disponiveis in ["3","4","5","6","7"] else 2)
+            with col4:
+                p_nivel = st.selectbox("Nível de conhecimento geral:", ["Iniciante","Básico","Intermediário","Avançado"],
+                    index=["Iniciante","Básico","Intermediário","Avançado"].index(st.session_state.nivel_conhecimento) if st.session_state.nivel_conhecimento in ["Iniciante","Básico","Intermediário","Avançado"] else 0)
+                p_experiencia = st.selectbox("Experiência anterior em concursos:", ["Nenhuma","Já fiz alguns concursos","Já passei em fases anteriores","Concurseiro experiente"],
+                    index=["Nenhuma","Já fiz alguns concursos","Já passei em fases anteriores","Concurseiro experiente"].index(st.session_state.experiencia_anterior) if st.session_state.experiencia_anterior in ["Nenhuma","Já fiz alguns concursos","Já passei em fases anteriores","Concurseiro experiente"] else 0)
+                p_metodo = st.selectbox("Método de estudo preferido:", ["Leitura","Vídeoaulas","Questões","Misto"],
+                    index=["Leitura","Vídeoaulas","Questões","Misto"].index(st.session_state.metodo_preferido) if st.session_state.metodo_preferido in ["Leitura","Vídeoaulas","Questões","Misto"] else 3)
+
+            st.markdown("#### 💡 Autoconhecimento")
+            col5, col6 = st.columns(2)
+            with col5:
+                p_dificuldade = st.text_input("Maior dificuldade:", value=st.session_state.maior_dificuldade, placeholder="ex: Matemática, Direito Administrativo...")
+            with col6:
+                p_facilidade = st.text_input("Maior facilidade:", value=st.session_state.maior_facilidade, placeholder="ex: Português, Informática...")
+
+            sub = st.form_submit_button("💾 SALVAR PERFIL COMPLETO")
+            if sub:
+                st.session_state.concurso_foco = p_concurso
+                st.session_state.cargo_foco = p_cargo
+                st.session_state.instituicao = p_instituicao
+                st.session_state.data_prova = p_data
+                st.session_state.nota_necessaria = p_nota
+                st.session_state.materias_foco = p_materias
+                st.session_state.horas_disponiveis = p_horas
+                st.session_state.dias_disponiveis = p_dias
+                st.session_state.nivel_conhecimento = p_nivel
+                st.session_state.experiencia_anterior = p_experiencia
+                st.session_state.metodo_preferido = p_metodo
+                st.session_state.maior_dificuldade = p_dificuldade
+                st.session_state.maior_facilidade = p_facilidade
+                st.session_state.meta_semanal_h = int(p_horas.replace('+','')) * int(p_dias)
+                salvar_perfil_cache(st.session_state.usuario)
+                st.success("✅ Perfil salvo! O tutor agora tem tudo que precisa para te guiar.")
+
+        if st.session_state.concurso_foco and st.button("📅 GERAR PLANEJAMENTO AUTOMÁTICO COMPLETO"):
+            with st.spinner("Montando seu cronograma até a data da prova..."):
+                prompt = (
+                    f"Crie um planejamento de estudos automático e completo para este candidato.\n"
+                    f"Concurso: {st.session_state.concurso_foco}. Cargo: {st.session_state.cargo_foco}. "
+                    f"Matérias: {st.session_state.materias_foco}. Data da prova: {st.session_state.data_prova or 'não definida'}. "
+                    f"Horas/dia: {st.session_state.horas_disponiveis}h. Dias/semana: {st.session_state.dias_disponiveis}. "
+                    f"Nível: {st.session_state.nivel_conhecimento}. Maior dificuldade: {st.session_state.maior_dificuldade}.\n\n"
+                    f"Inclua: distribuição de matérias, revisões espaçadas, simulados, folgas e metas semanais.\n"
+                    f"Formato: cronograma semana a semana até a prova."
+                )
+                res = tutor_ia(prompt)
+                salvar_estudo("Plano", f"Planejamento automático {st.session_state.concurso_foco}", res)
+                ganhar_xp('plano')
+                st.session_state['plano_temp_perfil'] = res
+
+        if st.session_state.get('plano_temp_perfil'):
+            st.markdown(f"<div class='card'>{st.session_state['plano_temp_perfil']}</div>", unsafe_allow_html=True)
+            st.download_button("📋 Baixar planejamento (.txt)", data=st.session_state['plano_temp_perfil'],
+                file_name="planejamento_concurso.txt", mime="text/plain")
+
     elif st.session_state.pagina == "Plano":
         st.header("📅 Plano de Estudos Personalizado")
         st.markdown("Cronograma realista e detalhado — do seu nível atual até a aprovação.")
@@ -940,9 +1309,305 @@ elif st.session_state.etapa == "App":
         else:
             st.info("Nenhum material gerado ainda. Comece pelo Plano de Estudos!")
 
+
+    # ──────────────────────────────────────────
+    # SIMULADO INTELIGENTE
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "Simulado":
+        st.header("🎯 Simulado Inteligente")
+        st.markdown("A IA cria uma prova personalizada, cronometrada e corrige automaticamente.")
+
+        if not st.session_state.get('simulado_ativo'):
+            col1, col2 = st.columns(2)
+            with col1:
+                mat_sim = st.multiselect("Matérias:", (st.session_state.materias_foco or "").split(",") + ["Português","Matemática","Direito Constitucional","Direito Administrativo","Informática","Raciocínio Lógico"])
+                n_questoes_sim = st.selectbox("Número de questões:", [10, 20, 30, 40, 50])
+            with col2:
+                nivel_sim = st.selectbox("Dificuldade:", ["Fácil","Médio","Difícil","Misto"])
+                tempo_sim = st.selectbox("Tempo:", ["30 min","1 hora","2 horas","3 horas","Sem limite"])
+
+            if st.button("🎯 INICIAR SIMULADO"):
+                with st.spinner("Gerando seu simulado..."):
+                    mats = ", ".join(mat_sim) if mat_sim else st.session_state.materias_foco or "as matérias do concurso"
+                    prompt = (
+                        f"Crie um simulado de {n_questoes_sim} questões de múltipla escolha (A/B/C/D/E) para {st.session_state.concurso_foco or 'concurso público'}.\n"
+                        f"Matérias: {mats}. Dificuldade: {nivel_sim}.\n\n"
+                        f"Para cada questão use o formato exato:\n\n"
+                        f"QUESTÃO [N] — [MATÉRIA] — [DIFICULDADE]\n"
+                        f"[Enunciado completo]\n"
+                        f"(A) [alternativa]\n(B) [alternativa]\n(C) [alternativa]\n(D) [alternativa]\n(E) [alternativa]\n"
+                        f"GABARITO: [letra]\n"
+                        f"EXPLICAÇÃO: [explicação em 2-3 linhas]\n\n"
+                        f"[repita para todas as questões]"
+                    )
+                    res = tutor_ia(prompt)
+                    st.session_state.simulado_ativo = {
+                        'conteudo': res, 'inicio': datetime.now().isoformat(),
+                        'tempo': tempo_sim, 'n': n_questoes_sim, 'materias': mats,
+                    }
+                    st.rerun()
+        else:
+            sim = st.session_state.simulado_ativo
+            inicio = datetime.fromisoformat(sim['inicio'])
+            decorrido = int((datetime.now() - inicio).total_seconds() / 60)
+            col_t, col_e = st.columns([3,1])
+            with col_t:
+                st.markdown(f"**Matérias:** {sim['materias']} · **Questões:** {sim['n']} · **Tempo:** {sim['tempo']}")
+            with col_e:
+                st.markdown(f"⏱️ **{decorrido} min decorridos**")
+
+            st.markdown(f"<div class='card'>{sim['conteudo']}</div>", unsafe_allow_html=True)
+
+            acerto_sim = st.number_input("Quantas questões você acertou?", min_value=0, max_value=sim['n'], value=0)
+            if st.button("✅ FINALIZAR E CORRIGIR"):
+                taxa_sim = int(acerto_sim / sim['n'] * 100)
+                st.session_state.questoes_respondidas += sim['n']
+                st.session_state.questoes_certas += acerto_sim
+                st.session_state.questoes_semana = st.session_state.get('questoes_semana',0) + sim['n']
+                xp_g, _ = ganhar_xp('simulado')
+                resultado_sim = {
+                    'data': datetime.now().strftime('%d/%m %H:%M'),
+                    'materias': sim['materias'], 'n': sim['n'],
+                    'acertos': acerto_sim, 'taxa': taxa_sim, 'tempo': decorrido
+                }
+                if 'historico_simulados' not in st.session_state:
+                    st.session_state.historico_simulados = []
+                st.session_state.historico_simulados.append(resultado_sim)
+                salvar_estudo("Simulado", sim['materias'], f"Taxa: {taxa_sim}% ({acerto_sim}/{sim['n']})")
+                st.success(f"🏆 Simulado concluído! Taxa: {taxa_sim}% · +{xp_g} XP")
+                del st.session_state.simulado_ativo
+                st.rerun()
+
+            if st.session_state.historico_simulados:
+                with st.expander("📊 Histórico de simulados"):
+                    for s in reversed(st.session_state.historico_simulados[-5:]):
+                        cor = "#059669" if s['taxa'] >= 70 else ("#D97706" if s['taxa'] >= 50 else "#DC2626")
+                        st.markdown(f"<div class='hist-item'>{s['data']} — {s['materias'][:40]} — <strong style='color:{cor}'>{s['taxa']}%</strong> ({s['acertos']}/{s['n']})</div>", unsafe_allow_html=True)
+
+    # ──────────────────────────────────────────
+    # CONQUISTAS
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "Conquistas":
+        st.header("🏆 Minhas Conquistas")
+        conquistadas = st.session_state.get('conquistas', [])
+        total = len(CONQUISTAS_DEF)
+        obtidas = len(conquistadas)
+        st.markdown(f"**{obtidas} de {total} conquistas desbloqueadas**")
+        st.progress(obtidas / total if total > 0 else 0)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        cols_c = st.columns(3)
+        for i, (chave, nome, desc) in enumerate(CONQUISTAS_DEF):
+            obtida = chave in conquistadas
+            estilo = "background:#FFFBEB;border:2px solid #F59E0B;" if obtida else "background:#F8FAFC;border:1px solid #E2E8F0;opacity:0.5;"
+            icon = "🏆" if obtida else "🔒"
+            with cols_c[i % 3]:
+                st.markdown(f"<div style='{estilo}border-radius:12px;padding:14px;margin-bottom:10px;text-align:center;'>"
+                    f"<div style='font-size:1.5em;'>{icon}</div>"
+                    f"<div style='font-weight:700;font-size:0.9em;color:#1A1A2E;'>{nome}</div>"
+                    f"<div style='font-size:0.78em;color:#64748B;'>{desc}</div>"
+                    f"</div>", unsafe_allow_html=True)
+
+    # ──────────────────────────────────────────
+    # XP E GAMIFICAÇÃO
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "Evolucao":
+        st.header("🎮 XP e Evolução")
+        xp = st.session_state.pontuacao_total
+        req_xp, nivel_nome, nivel_emoji = calcular_nivel(xp)
+        prox = xp_proximo_nivel(xp)
+        pct_nivel = min(int((xp - req_xp) / max(prox - req_xp, 1) * 100), 100) if prox > req_xp else 100
+
+        st.markdown(f"""
+        <div class='xp-box'>
+            <div style='font-size:0.85em;'>NÍVEL ATUAL</div>
+            <div style='font-size:2.5em;font-weight:700;'>{nivel_emoji} {nivel_nome}</div>
+            <div style='font-size:1.2em;'>{xp} XP</div>
+            <div style='font-size:0.82em;opacity:0.7;'>Próximo nível: {prox} XP</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.progress(pct_nivel / 100)
+        st.markdown(f"**{pct_nivel}% para o próximo nível**")
+
+        st.markdown("### 📊 Tabela de Níveis")
+        for req, nome, em in NIVEIS:
+            atual = xp >= req
+            cor = "#059669" if atual else "#94A3B8"
+            st.markdown(f"<div style='background:#F8FAFC;border-left:4px solid {cor};border-radius:8px;padding:10px 16px;margin-bottom:6px;'>"
+                f"<strong>{em} {nome}</strong> — {req} XP {'✅' if atual else ''}</div>", unsafe_allow_html=True)
+
+        st.markdown("### 🎯 XP por Atividade")
+        for ativ, pts in XP_ATIVIDADES.items():
+            nomes_ativ = {'questao_certa':'Questão certa','questao_errada':'Questão tentada','resumo':'Resumo criado',
+                'flashcard':'Flashcard criado','simulado':'Simulado completo','revisao':'Revisão feita',
+                'plano':'Plano criado','mapa_mental':'Mapa mental','missao_dia':'Missão do dia concluída'}
+            st.markdown(f"**{nomes_ativ.get(ativ, ativ)}** — +{pts} XP")
+
+        st.markdown("### 🔥 Sequência de Estudos")
+        col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+        col_s1.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.get('streak_atual',0)}</div><div>Dias seguidos</div></div>", unsafe_allow_html=True)
+        col_s2.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.get('maior_streak',0)}</div><div>Maior sequência</div></div>", unsafe_allow_html=True)
+        col_s3.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.get('dias_estudo',0)}</div><div>Total de dias</div></div>", unsafe_allow_html=True)
+        col_s4.markdown(f"<div class='stat-box'><div class='stat-numero'>{xp}</div><div>XP Total</div></div>", unsafe_allow_html=True)
+
+    # ──────────────────────────────────────────
+    # RADAR DAS DISCIPLINAS
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "Radar":
+        st.header("📡 Radar das Disciplinas")
+        st.markdown("*Atualize manualmente ou deixe a IA calcular com base no seu histórico.*")
+
+        materias_list = [m.strip() for m in (st.session_state.materias_foco or "Português,Matemática,Direito").split(",") if m.strip()]
+        radar = st.session_state.get('radar_materias', {})
+
+        for mat in materias_list:
+            if mat not in radar:
+                radar[mat] = 50
+
+        st.markdown("#### 📊 Sua performance por matéria")
+        for mat in materias_list:
+            nota = radar.get(mat, 50)
+            cor = "#059669" if nota >= 70 else ("#D97706" if nota >= 50 else "#DC2626")
+            col_n, col_b = st.columns([2, 3])
+            with col_n:
+                nova = st.slider(mat, 0, 100, nota, key=f"radar_{mat}")
+                radar[mat] = nova
+            with col_b:
+                st.markdown(f"<div style='margin-top:28px;'><div style='background:#F1F5F9;border-radius:999px;height:12px;overflow:hidden;'>"
+                    f"<div style='height:100%;border-radius:999px;background:{cor};width:{nova}%;'></div></div>"
+                    f"<small style='color:{cor};font-weight:600;'>{nova}% — {'Dominado' if nova>=70 else ('Em progresso' if nova>=50 else 'Crítico')}</small></div>",
+                    unsafe_allow_html=True)
+
+        st.session_state.radar_materias = radar
+
+        if st.button("🤖 ANALISAR RADAR COM IA"):
+            with st.spinner("Analisando..."):
+                radar_txt = "\n".join(f"- {m}: {radar.get(m,50)}%" for m in materias_list)
+                prompt = (
+                    f"Analise o radar de disciplinas deste candidato e dê recomendações estratégicas.\n"
+                    f"Concurso: {st.session_state.concurso_foco}.\nDesempenho por matéria:\n{radar_txt}\n\n"
+                    f"FORMATO:\n\n"
+                    f"📡 ANÁLISE DO RADAR\n\n"
+                    f"✅ DISCIPLINAS DOMINADAS (acima de 70%):\n[lista e o que fazer para manter]\n\n"
+                    f"⚠️ EM PROGRESSO (50-70%):\n[lista e como avançar]\n\n"
+                    f"🚨 DISCIPLINAS CRÍTICAS (abaixo de 50%):\n[lista, impacto na aprovação e plano de ataque]\n\n"
+                    f"🎯 PRIORIDADES DESTA SEMANA:\n[ordem exata de estudo com justificativa]"
+                )
+                res = tutor_ia(prompt)
+                salvar_estudo("Radar", "Análise de Disciplinas", res)
+                st.session_state['radar_analise_temp'] = res
+
+        if st.session_state.get('radar_analise_temp'):
+            st.markdown(f"<div class='card'>{st.session_state['radar_analise_temp']}</div>", unsafe_allow_html=True)
+
+    # ──────────────────────────────────────────
+    # RELATÓRIO SEMANAL
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "Relatorio":
+        st.header("📊 Relatório Semanal")
+
+        q = st.session_state.questoes_respondidas
+        taxa = int(st.session_state.questoes_certas/max(q,1)*100)
+        horas = st.session_state.get('horas_acumuladas', 0)
+        streak = st.session_state.get('streak_atual', 0)
+        idx = calcular_indice_preparacao()
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.get('horas_semana',0):.0f}h</div><div>Horas esta semana</div></div>", unsafe_allow_html=True)
+        col2.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.get('questoes_semana',0)}</div><div>Questões esta semana</div></div>", unsafe_allow_html=True)
+        col3.markdown(f"<div class='stat-box'><div class='stat-numero'>{taxa}%</div><div>Taxa de acerto</div></div>", unsafe_allow_html=True)
+        col4.markdown(f"<div class='stat-box'><div class='stat-numero'>{idx}%</div><div>Índice de prep.</div></div>", unsafe_allow_html=True)
+
+        if st.button("📊 GERAR RELATÓRIO COMPLETO DA SEMANA"):
+            with st.spinner("Gerando relatório..."):
+                prompt = (
+                    f"Crie um relatório semanal completo de estudos para este candidato.\n"
+                    f"Concurso: {st.session_state.concurso_foco}. "
+                    f"Horas esta semana: {st.session_state.get('horas_semana',0)}. "
+                    f"Questões: {st.session_state.get('questoes_semana',0)}. Taxa: {taxa}%. "
+                    f"Streak: {streak} dias. Índice: {idx}%.\n\n"
+                    f"FORMATO:\n\n"
+                    f"📊 RELATÓRIO SEMANAL\n\n"
+                    f"✅ O QUE FOI FEITO:\n[resumo da semana]\n\n"
+                    f"📈 EVOLUÇÃO:\n[análise do desempenho]\n\n"
+                    f"⭐ PONTOS FORTES DA SEMANA:\n[o que está funcionando]\n\n"
+                    f"⚠️ PONTOS A MELHORAR:\n[o que ajustar]\n\n"
+                    f"🎯 OBJETIVOS DA PRÓXIMA SEMANA:\n[metas específicas]\n\n"
+                    f"📈 ESTIMATIVA DE APROVAÇÃO:\n[baseada nos dados atuais — sempre como estimativa, nunca garantia]"
+                )
+                res = tutor_ia(prompt)
+                salvar_estudo("Relatório", "Relatório Semanal", res)
+                st.session_state['relatorio_temp'] = res
+
+                # Zera contadores semanais
+                st.session_state.horas_semana = 0
+                st.session_state.questoes_semana = 0
+
+        if st.session_state.get('relatorio_temp'):
+            st.markdown(f"<div class='card'>{st.session_state['relatorio_temp']}</div>", unsafe_allow_html=True)
+            st.download_button("📋 Baixar relatório (.txt)", data=st.session_state['relatorio_temp'],
+                file_name="relatorio_semanal.txt", mime="text/plain")
+
+    # ──────────────────────────────────────────
+    # DIAGNÓSTICO INTELIGENTE
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "Diagnostico":
+        st.header("🧭 Diagnóstico Inteligente")
+        st.markdown("*A IA analisa todo o seu histórico e diz exatamente onde focar.*")
+
+        if st.button("🧭 GERAR DIAGNÓSTICO COMPLETO"):
+            with st.spinner("Analisando todo o seu histórico..."):
+                q = st.session_state.questoes_respondidas
+                taxa = int(st.session_state.questoes_certas/max(q,1)*100)
+                horas = st.session_state.get('horas_acumuladas', 0)
+                radar = st.session_state.get('radar_materias', {})
+                radar_txt = "\n".join(f"- {m}: {v}%" for m,v in radar.items()) if radar else "Não configurado"
+                hist_tipos = {}
+                for e in st.session_state.historico_estudos:
+                    hist_tipos[e['tipo']] = hist_tipos.get(e['tipo'], 0) + 1
+
+                prompt = (
+                    f"Faça um diagnóstico inteligente completo deste candidato.\n"
+                    f"Concurso: {st.session_state.concurso_foco}. Nível: {st.session_state.nivel_conhecimento}. "
+                    f"Questões: {q}. Taxa: {taxa}%. Horas: {horas}h. Streak: {st.session_state.get('streak_atual',0)} dias. "
+                    f"Maior dificuldade: {st.session_state.maior_dificuldade}. Maior facilidade: {st.session_state.maior_facilidade}.\n"
+                    f"Radar de matérias:\n{radar_txt}\n"
+                    f"Histórico de atividades: {hist_tipos}\n\n"
+                    f"FORMATO:\n\n"
+                    f"🧭 DIAGNÓSTICO INTELIGENTE\n\n"
+                    f"✅ PONTOS FORTES:\n[o que está bem — com evidências dos dados]\n\n"
+                    f"⚠️ PONTOS FRACOS:\n[o que precisa melhorar — com evidências]\n\n"
+                    f"📚 DISCIPLINAS DOMINADAS:\n[lista com base no radar e histórico]\n\n"
+                    f"🚨 DISCIPLINAS CRÍTICAS:\n[lista com impacto na aprovação]\n\n"
+                    f"💡 RECOMENDAÇÃO DA SEMANA:\n[o que fazer nos próximos 7 dias]\n\n"
+                    f"🎯 PRÓXIMO FOCO:\n[a UMA coisa mais importante para fazer agora]\n\n"
+                    f"📈 PRIORIDADES INTELIGENTES:\n"
+                    f"Hoje (★★★★★): [matéria]\n"
+                    f"Depois (★★★★☆): [matéria]\n"
+                    f"Em seguida (★★★☆☆): [matéria]\n\n"
+                    f"🔮 PREVISÃO DE APROVAÇÃO:\n[estimativa baseada nos dados, com ações para melhorar — sempre como estimativa]"
+                )
+                res = tutor_ia(prompt)
+                salvar_estudo("Diagnóstico", "Diagnóstico Inteligente", res)
+                st.session_state['diag_temp'] = res
+
+        if st.session_state.get('diag_temp'):
+            st.markdown(f"<div class='card'>{st.session_state['diag_temp']}</div>", unsafe_allow_html=True)
+            col_dl, col_sv = st.columns(2)
+            with col_dl:
+                st.download_button("📋 Baixar (.txt)", data=st.session_state['diag_temp'],
+                    file_name="diagnostico.txt", mime="text/plain", use_container_width=True)
+            with col_sv:
+                if st.button("❤️ Salvar", key="sv_diag", use_container_width=True):
+                    st.session_state.biblioteca_materiais.append({
+                        'tipo':'Diagnóstico','materia':'Análise Completa',
+                        'conteudo':st.session_state['diag_temp'],'data':datetime.now().strftime('%d/%m %H:%M'),
+                        'favorito':False})
+                    st.success("❤️ Salvo!")
+
 # --- RODAPÉ ---
 st.markdown(
     "<div style='text-align:center;color:#999;font-size:0.8em;margin-top:60px;'>"
-    "© 2026 Tutor de Concursos — Estudos e Aprovação com IA · Quiz Com Prêmios"
+    "© 2026 Tutor de Concursos IA — Mentor Estratégico · Quiz Com Prêmios"
     "</div>", unsafe_allow_html=True
 )
