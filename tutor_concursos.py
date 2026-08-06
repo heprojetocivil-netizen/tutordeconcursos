@@ -77,11 +77,13 @@ st.markdown("""
     .streak-box { background:linear-gradient(135deg,#FEF3C7,#FFFBEB); border:2px solid #F59E0B; border-radius:16px; padding:20px; text-align:center; margin-bottom:16px; }
     .stApp .streak-box, .stApp .streak-box p, .stApp .streak-box span, .stApp .streak-box div { color:#92400E !important; }
 
+
     .stat-box { background:#FFFBEB; border-radius:12px; padding:18px; text-align:center; border:1px solid #FCD34D; }
-    .stat-numero { font-size:2em; font-weight:700; color:#D97706 !important; font-family:'Playfair Display',serif; }
+    .stApp .stat-box div, .stApp .stat-box span, .stApp .stat-box p { color:#1A1A2E !important; }
+    .stApp .stat-numero, .stat-numero { font-size:2em; font-weight:700; color:#D97706 !important; font-family:'Playfair Display',serif; }
 
     .hist-item { background:#FFFBEB; border-radius:10px; padding:12px 16px; margin-bottom:8px; border-left:4px solid #F59E0B; }
-    .stApp .hist-item, .stApp .hist-item p, .stApp .hist-item span, .stApp .hist-item div { color:#1A1A2E !important; }
+    .stApp .hist-item, .stApp .hist-item p, .stApp .hist-item span, .stApp .hist-item div, .stApp .hist-item small { color:#1A1A2E !important; }
 
     .badge { background:#D97706; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
     .badge-verde { background:#059669; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
@@ -95,6 +97,10 @@ st.markdown("""
     .divider { border:none; height:1px; background:linear-gradient(to right,transparent,#FCD34D,transparent); margin:20px 0; }
     .questao-box { background:#FFFFFF; border:2px solid #FCD34D; border-radius:14px; padding:20px; margin-bottom:16px; }
     .stApp .questao-box, .stApp .questao-box p, .stApp .questao-box span, .stApp .questao-box div { color:#1A1A2E !important; }
+
+    /* Garante que texto normal (fora de cards) seja sempre preto no fundo branco */
+    .stApp > div > div > div > div { color: #1A1A2E; }
+    .stMarkdown p, .stMarkdown span, .stMarkdown div { color: #1A1A2E !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -657,6 +663,10 @@ elif st.session_state.etapa == "App":
         materias_radar = st.session_state.get('radar_materias', {})
         maior_evolucao = max(materias_radar.items(), key=lambda x: x[1], default=("—", 0))
 
+        # Variáveis para o HTML (evita expressões condicionais dentro de f-string)
+        rec_dif = f"<strong>Maior dificuldade:</strong> {dif}. " if dif != "Não definida" else ""
+        rec_acao = f"Priorize {dif} nos próximos dias e mantenha questões diárias." if dif != "Não definida" else "Configure seu perfil completo para recomendações personalizadas."
+
         st.markdown(f"""
         <div class='painel-exec'>
             <div style='font-size:1.3em;font-weight:700;margin-bottom:20px;letter-spacing:1px;'>🎓 PAINEL DO MENTOR — {st.session_state.usuario.upper()}</div>
@@ -699,9 +709,9 @@ elif st.session_state.etapa == "App":
             <div style='background:rgba(255,255,255,0.06);border-radius:12px;padding:16px;'>
                 <div style='font-size:0.72em;opacity:0.6;margin-bottom:8px;'>🤖 RECOMENDAÇÃO DA IA</div>
                 <div style='font-size:0.95em;line-height:1.7;'>
-                    {'<strong>Maior dificuldade:</strong> ' + dif + '. ' if dif != 'Não definida' else ''}
+                    {rec_dif}
                     Índice de preparação: <strong>{idx}%</strong> — Probabilidade estimada: <strong>{prob}</strong>.
-                    {'Priorize ' + dif + ' nos próximos dias e mantenha questões diárias.' if dif != 'Não definida' else 'Configure seu perfil completo para recomendações personalizadas.'}
+                    {rec_acao}
                 </div>
             </div>
         </div>
