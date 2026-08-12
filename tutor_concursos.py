@@ -10,7 +10,7 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap');
 
-    .stApp { background-color: #FFFFFF; color: #000000; font-family: 'DM Sans', sans-serif; }
+    .stApp { background- color: #000000; font-family: 'DM Sans', sans-serif; }
     [data-testid="stSidebar"] { display: none; }
 
     .stTextInput>div>div>input,
@@ -60,7 +60,12 @@ st.markdown("""
 
     .indice-box { background:linear-gradient(135deg,#D97706,#F59E0B); border-radius:18px; padding:24px; text-align:center; box-shadow:0 4px 24px rgba(217,119,6,0.3); margin-bottom:16px; }
     .stApp .indice-box, .stApp .indice-box p, .stApp .indice-box span, .stApp .indice-box div { color:white !important; }
-    .indice-numero { font-size:3.5em; font-weight:700; font-family:'Playfair Display',serif; }
+    .indice-numero { font-size:3.5em; font-weight:700; font-family:'Playfair Display',serif; color:white !important; }
+    .stApp .indice-numero { color:white !important; }
+
+    .card-orange { background:linear-gradient(135deg,#FFFBEB,#FEF3C7); padding:22px; border-radius:16px; border:1px solid #FCD34D; margin-bottom:15px; white-space:pre-wrap; }
+    .stApp .card-orange, .stApp .card-orange p, .stApp .card-orange span,
+    .stApp .card-orange div, .stApp .card-orange strong, .stApp .card-orange em { color:#1A1A2E !important; }
 
     .missao-box { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); border:2px solid #16A34A; border-radius:16px; padding:20px; margin-bottom:16px; }
     .stApp .missao-box, .stApp .missao-box p, .stApp .missao-box span, .stApp .missao-box div, .stApp .missao-box strong { color:#14532D !important; }
@@ -302,6 +307,14 @@ defaults = {
     'horas_semana': 0, 'questoes_semana': 0,
     'questoes_ativas': [], 'respondendo_idx': 0, 'respostas_sessao': [],
     'historico_simulados': [],
+    'relampago_historico': [],
+    'relampago_fase': 'menu',
+    'relampago_tema': '',
+    'relampago_modo': 'Desafio',
+    'relampago_planejamento': {},
+    'relampago_redacao': '',
+    'relampago_aval_plano': '',
+    'relampago_aval_redacao': '',
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -452,13 +465,14 @@ elif st.session_state.etapa == "App":
             st.session_state.pagina = pg; st.rerun()
 
     # NAVBAR linha 2
-    cols2 = st.columns(9)
+    cols2 = st.columns(10)
     nav2 = [("💬","Tutor"),("📚","Biblioteca"),("📈","Progresso"),("🏆","Conquistas"),
-            ("🎮","Evolucao"),("📡","Radar"),("📊","Relatorio"),("🧭","Diagnostico"),("❤️","Salvos")]
+            ("🎮","Evolucao"),("📡","Radar"),("📊","Relatorio"),("🧭","Diagnostico"),("❤️","Salvos"),("⚡","Relampago")]
     lb2 = {"Tutor":"Tutor Inteligente","Biblioteca":"Biblioteca de Materiais",
            "Progresso":"Estatísticas e Progresso","Conquistas":"Minhas Conquistas",
            "Evolucao":"XP e Gamificação","Radar":"Radar das Disciplinas",
-           "Relatorio":"Relatório Semanal","Diagnostico":"Diagnóstico Inteligente","Salvos":"Materiais Salvos"}
+           "Relatorio":"Relatório Semanal","Diagnostico":"Diagnóstico Inteligente",
+           "Salvos":"Materiais Salvos","Relampago":"⚡ Redação Tema Relâmpago"}
     for i,(ic,pg) in enumerate(nav2):
         if cols2[i].button(ic, key=f"nav2_{pg}", help=lb2[pg]):
             st.session_state.pagina = pg; st.rerun()
@@ -708,14 +722,20 @@ elif st.session_state.etapa == "App":
             </div>
             <div style='background:rgba(255,255,255,0.06);border-radius:12px;padding:16px;'>
                 <div style='font-size:0.72em;opacity:0.6;margin-bottom:8px;'>🤖 RECOMENDAÇÃO DA IA</div>
-                <div style='font-size:0.95em;line-height:1.7;'>
-                    {rec_dif}
-                    Índice de preparação: <strong>{idx}%</strong> — Probabilidade estimada: <strong>{prob}</strong>.
-                    {rec_acao}
-                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+        # Recomendação separada para evitar escape de HTML com variáveis
+        st.markdown(
+            f"<div style='background:rgba(26,26,46,0.05);border:1px solid #FCD34D;border-radius:12px;"
+            f"padding:14px 18px;margin-top:-14px;margin-bottom:20px;font-size:0.95em;line-height:1.7;color:#1A1A2E;'>"
+            f"{rec_dif}"
+            f"Índice de preparação: <strong>{idx}%</strong> — Probabilidade estimada: <strong>{prob}</strong>. "
+            f"{rec_acao}"
+            f"</div>",
+            unsafe_allow_html=True
+        )
 
         if st.button("🤖 RECOMENDAÇÃO ESTRATÉGICA COMPLETA DA IA"):
             with st.spinner("Analisando seu perfil completo..."):
@@ -1614,6 +1634,510 @@ elif st.session_state.etapa == "App":
                         'conteudo':st.session_state['diag_temp'],'data':datetime.now().strftime('%d/%m %H:%M'),
                         'favorito':False})
                     st.success("❤️ Salvo!")
+
+    # ──────────────────────────────────────────
+    # ⚡ REDAÇÃO TEMA RELÂMPAGO
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "Relampago":
+        st.header("⚡ Redação Tema Relâmpago")
+        st.markdown("*Você não sabe qual será o tema da sua prova. Por isso, aprenda a reagir a qualquer tema.*")
+
+        # Tabs principais
+        tab_teoria, tab_praticar, tab_correcao, tab_evolucao = st.tabs([
+            "📚 Teoria — A Escada","⚡ Praticar Agora","✍️ Corrigir Redação","📈 Minha Evolução"
+        ])
+
+        # ─── TEORIA ───
+        with tab_teoria:
+            st.markdown("## 🪜 A Escada do Tema Relâmpago")
+            st.markdown("*Quando um tema aparecer na prova, suba a escada — não entre em pânico e não comece a escrever imediatamente.*")
+
+            degraus = [
+                ("1️⃣","ENTENDA O TEMA",
+                 "Faça três perguntas antes de escrever:\n\n"
+                 "📌 **Qual é o assunto?** — Sobre o que estamos falando?\n\n"
+                 "📌 **Qual é o recorte?** — Qual aspecto desse assunto está sendo discutido?\n\n"
+                 "📌 **Qual é a questão central?** — O que precisa ser analisado?\n\n"
+                 "**Exemplo:** *Os desafios da inteligência artificial no mercado de trabalho brasileiro.*\n\n"
+                 "❌ Não pense apenas: 'O tema é inteligência artificial.'\n\n"
+                 "✅ Identifique: ASSUNTO → inteligência artificial · RECORTE → mercado de trabalho · CONTEXTO → Brasil · QUESTÃO → quais desafios a IA provoca?"),
+                ("2️⃣","QUEBRE O TEMA",
+                 "Transforme um tema grande em partes menores. Pegue as principais palavras e associe livremente.\n\n"
+                 "**INTELIGÊNCIA ARTIFICIAL** → automação · tecnologia · produtividade · profissões · inovação\n\n"
+                 "**MERCADO DE TRABALHO** → empregos · salários · qualificação · desemprego · oportunidades\n\n"
+                 "**BRASIL** → desigualdade · educação · políticas públicas · acesso à tecnologia\n\n"
+                 "Agora você já tem vários caminhos possíveis."),
+                ("3️⃣","FAÇA ASSOCIAÇÕES",
+                 "Use a **Teia de Associações** quando faltar ideia:\n\n"
+                 "👤 **Indivíduo** — Como isso afeta as pessoas?\n"
+                 "👨‍👩‍👧 **Sociedade** — Como afeta a sociedade?\n"
+                 "💰 **Economia** — Existe impacto econômico?\n"
+                 "🏛️ **Estado** — Qual é o papel do governo?\n"
+                 "🎓 **Educação** — Existe relação com qualificação?\n"
+                 "⚖️ **Direitos** — Existe questão de igualdade ou cidadania?\n"
+                 "🌎 **Meio Ambiente** — Existe impacto ambiental?\n"
+                 "💻 **Tecnologia** — Existe relação com inovação?"),
+                ("4️⃣","FAÇA AS PERGUNTAS MÁGICAS",
+                 "Quando estiver sem ideias, pergunte:\n\n"
+                 "❓ Por que isso acontece? · O que causa esse problema?\n"
+                 "❓ Quais são as consequências? · Quem é afetado?\n"
+                 "❓ Por que o problema continua? · O que poderia ser feito?\n"
+                 "❓ Quem deveria agir? · O que acontece se nada mudar?\n\n"
+                 "Essas perguntas funcionam como um **gerador de ideias**."),
+                ("5️⃣","ENCONTRE CAUSAS E CONSEQUÊNCIAS",
+                 "Separe:\n\n"
+                 "🔴 **CAUSAS** — Por que o problema existe?\n"
+                 "🟢 **CONSEQUÊNCIAS** — O que o problema provoca?\n\n"
+                 "**Exemplo:** *Desafios da educação digital no Brasil*\n\n"
+                 "CAUSAS → desigualdade de acesso · falta de infraestrutura · dificuldade de capacitação\n\n"
+                 "CONSEQUÊNCIAS → exclusão digital · dificuldades de aprendizagem · aumento das desigualdades\n\n"
+                 "Você já encontrou vários argumentos sem precisar decorar nada."),
+                ("6️⃣","ESCOLHA DOIS ARGUMENTOS",
+                 "Você não precisa de dez ideias. **Precisa de duas boas ideias.**\n\n"
+                 "Escolha os dois argumentos que:\n"
+                 "✅ Têm relação direta com o tema\n"
+                 "✅ São fáceis de explicar\n"
+                 "✅ Permitem apresentar consequências ou exemplos\n"
+                 "✅ Podem ser desenvolvidos em um parágrafo\n\n"
+                 "⚠️ Evite escolher dois argumentos praticamente iguais."),
+                ("7️⃣","DEFINA SUA TESE",
+                 "Responda: **Qual é a minha ideia central sobre esse tema?**\n\n"
+                 "A tese não precisa ser complicada. Precisa ser clara, coerente e defensável.\n\n"
+                 "**Exemplo:** *A expansão da inteligência artificial transforma o mercado de trabalho e exige investimentos em qualificação profissional para reduzir os impactos da desigualdade.*\n\n"
+                 "Agora você sabe o que vai defender."),
+                ("8️⃣","MONTE O MAPA",
+                 "📝 **INTRODUÇÃO** → Tema + contextualização + tese\n\n"
+                 "🧠 **DESENVOLVIMENTO 1** → Argumento 1 + explicação + exemplo/consequência\n\n"
+                 "🧠 **DESENVOLVIMENTO 2** → Argumento 2 + explicação + exemplo/consequência\n\n"
+                 "🏁 **CONCLUSÃO** → Retomada + solução/proposta + fechamento"),
+                ("9️⃣","ESCREVA",
+                 "Você não está mais diante de uma folha em branco. Você possui:\n\n"
+                 "✅ Tema compreendido · ✅ Tese · ✅ Dois argumentos · ✅ Estrutura · ✅ Caminho para a conclusão\n\n"
+                 "**⚠️ REGRA IMPORTANTE:** Não escreva para descobrir o que você pensa. **Pense primeiro. Escreva depois.**"),
+                ("🔟","REVISE",
+                 "Não entregue imediatamente. Verifique:\n\n"
+                 "🎯 **Tema** — Estou realmente respondendo ao tema?\n"
+                 "🧠 **Tese** — Minha posição está clara?\n"
+                 "🏗️ **Estrutura** — Cada parágrafo possui uma função?\n"
+                 "🔗 **Coesão** — As ideias estão conectadas?\n"
+                 "📖 **Gramática** — Existem erros que posso corrigir?\n"
+                 "🏁 **Conclusão** — Fecha o raciocínio?"),
+            ]
+
+            for num, titulo, conteudo in degraus:
+                with st.expander(f"{num} {titulo}"):
+                    st.markdown(conteudo)
+
+            st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+            st.markdown("### 🎓 Modos de Treinamento")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.markdown("<div class='card-green'><strong>🟢 Aprendiz</strong><br>10 min · Com orientações<br><small>Ideal para quem está aprendendo</small></div>", unsafe_allow_html=True)
+            col2.markdown("<div class='card-yellow'><strong>🟡 Desafio</strong><br>10 min · Sem sugestões<br><small>Aplique o método sozinho</small></div>", unsafe_allow_html=True)
+            col3.markdown("<div class='card-orange'><strong>🔴 Pressão</strong><br>8 min · Mais exigente<br><small>Maior velocidade</small></div>", unsafe_allow_html=True)
+            col4.markdown("<div class='card-dark'><strong>⚡ Relâmpago Extremo</strong><br>5 min · Máxima dificuldade<br><small>Estrutura no menor tempo</small></div>", unsafe_allow_html=True)
+
+        # ─── PRATICAR ───
+        with tab_praticar:
+            fase = st.session_state.relampago_fase
+
+            # ── MENU ──
+            if fase == 'menu':
+                st.markdown("### ⚡ Seu Desafio Tema Relâmpago")
+                st.markdown("""<div class='card-yellow'>
+                ⚠️ <strong>Você não verá o tema antes de iniciar.</strong><br>
+                Ao clicar no botão, a IA revelará um tema surpresa e o cronômetro começará.<br>
+                Você usará os campos de planejamento para aplicar a Escada do Tema Relâmpago.
+                </div>""", unsafe_allow_html=True)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    modo = st.selectbox("Modo de treino:", ["🟢 Aprendiz (10 min)","🟡 Desafio (10 min)","🔴 Pressão (8 min)","⚡ Relâmpago Extremo (5 min)"])
+                    st.session_state.relampago_modo = modo
+                with col2:
+                    concurso_rel = st.text_input("Concurso (para temas relevantes):", value=st.session_state.concurso_foco or "", placeholder="ex: PRF, INSS, TRT...")
+
+                if st.button("⚡ REVELAR MEU TEMA — INICIAR AGORA", use_container_width=True):
+                    with st.spinner("Gerando tema surpresa..."):
+                        hist_temas = [r.get('tema','') for r in st.session_state.relampago_historico[-10:]]
+                        hist_txt = ", ".join(hist_temas) if hist_temas else "nenhum"
+                        prompt_tema = (
+                            f"Gere UM tema de redação dissertativo-argumentativa para concurso público.\n"
+                            f"Concurso alvo: {concurso_rel or 'concurso público geral'}.\n"
+                            f"Temas já usados (NÃO repita): {hist_txt}\n"
+                            f"O tema deve ser atual, relevante e compatível com bancas como CEBRASPE, FCC, VUNESP.\n"
+                            f"Retorne APENAS o tema, sem explicações. Exemplo: 'Os desafios da saúde mental no ambiente de trabalho brasileiro.'"
+                        )
+                        tema = tutor_ia(prompt_tema)
+                        tema = tema.strip().strip('"').strip("'")
+                        st.session_state.relampago_tema = tema
+                        st.session_state.relampago_fase = 'planejamento'
+                        st.session_state.relampago_planejamento = {}
+                        st.session_state.relampago_aval_plano = ''
+                        st.session_state.relampago_aval_redacao = ''
+                        st.session_state.relampago_redacao = ''
+                        st.rerun()
+
+                # Treinamento por habilidade
+                st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+                st.markdown("### 🎯 Treinar por Habilidade Específica")
+                habilidades = ["🔎 Interpretar Temas","🔗 Fazer Associações","💡 Criar Teses",
+                               "🧠 Criar Argumentos","🏗️ Montar Estruturas","✍️ Introduções",
+                               "🏁 Conclusões","🔗 Coesão","📖 Linguagem","⏱️ Velocidade"]
+                hab_sel = st.selectbox("Escolha a habilidade:", habilidades)
+                if st.button("🎯 TREINAR ESTA HABILIDADE"):
+                    with st.spinner("Criando exercício..."):
+                        prompt_hab = (
+                            f"Crie um exercício focado em: {hab_sel} para redação de concurso público.\n"
+                            f"Concurso: {concurso_rel or 'geral'}.\n\n"
+                            f"FORMATO:\n\n"
+                            f"🎯 EXERCÍCIO: {hab_sel.upper()}\n\n"
+                            f"📖 CONCEITO:\n[explicação clara e direta]\n\n"
+                            f"💡 EXEMPLO PRÁTICO:\n[demonstração concreta]\n\n"
+                            f"✍️ SEU DESAFIO:\n[exercício para o candidato praticar agora]\n\n"
+                            f"⭐ CRITÉRIO DE SUCESSO:\n[como saber se conseguiu]"
+                        )
+                        res_hab = tutor_ia(prompt_hab)
+                        salvar_estudo("Treino Habilidade", hab_sel, res_hab)
+                        st.session_state['rel_hab_temp'] = res_hab
+
+                if st.session_state.get('rel_hab_temp'):
+                    st.markdown(f"<div class='card'>{st.session_state['rel_hab_temp']}</div>", unsafe_allow_html=True)
+
+            # ── PLANEJAMENTO ──
+            elif fase == 'planejamento':
+                tema = st.session_state.relampago_tema
+                modo = st.session_state.relampago_modo
+                minutos = 5 if "5" in modo else (8 if "8" in modo else 10)
+                aprendiz = "Aprendiz" in modo
+
+                st.markdown(f"""
+                <div style='background:linear-gradient(135deg,#1A1A2E,#0F172A);border:2px solid #F59E0B;
+                border-radius:16px;padding:20px 24px;margin-bottom:20px;'>
+                    <div style='color:#FDE68A;font-size:0.8em;letter-spacing:2px;'>⚡ TEMA RELÂMPAGO — {modo.upper()}</div>
+                    <div style='color:#FDE68A;font-size:1.4em;font-weight:700;margin-top:8px;'>{tema}</div>
+                    <div style='color:#94A3B8;font-size:0.85em;margin-top:6px;'>⏱️ Você tem {minutos} minutos para completar o planejamento.</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                if aprendiz:
+                    st.markdown("""<div class='card-green'>
+                    💡 <strong>Modo Aprendiz:</strong> Lembre-se da Escada — ENTENDA → QUEBRE → ASSOCIE → QUESTIONE → CAUSAS/CONSEQUÊNCIAS → 2 ARGUMENTOS → TESE → MAPA
+                    </div>""", unsafe_allow_html=True)
+
+                st.markdown("### 🧠 Seu Planejamento")
+                pl = st.session_state.relampago_planejamento
+
+                with st.form("form_planejamento_relampago"):
+                    p1 = st.text_area("1. O que o tema está pedindo? (Assunto, recorte e questão central)", value=pl.get('p1',''), height=80)
+                    p2 = st.text_area("2. Quebre o tema — principais palavras e suas associações:", value=pl.get('p2',''), height=80)
+                    p3 = st.text_area("3. Associações (Indivíduo, Sociedade, Economia, Estado, Educação, Direitos...):", value=pl.get('p3',''), height=80)
+                    p4 = st.text_area("4. Possíveis causas do problema:", value=pl.get('p4',''), height=80)
+                    p5 = st.text_area("5. Possíveis consequências:", value=pl.get('p5',''), height=80)
+                    p6 = st.text_area("6. Seu Argumento 1:", value=pl.get('p6',''), height=80)
+                    p7 = st.text_area("7. Seu Argumento 2:", value=pl.get('p7',''), height=80)
+                    p8 = st.text_area("8. Sua Tese (posição central):", value=pl.get('p8',''), height=80)
+
+                    st.markdown("### 🏗️ Mapa da Redação")
+                    m1 = st.text_area("📝 INTRODUÇÃO (tema + contextualização + tese):", value=pl.get('m1',''), height=80)
+                    m2 = st.text_area("🧠 DESENVOLVIMENTO 1 (argumento + explicação + exemplo):", value=pl.get('m2',''), height=80)
+                    m3 = st.text_area("🧠 DESENVOLVIMENTO 2 (argumento + explicação + exemplo):", value=pl.get('m3',''), height=80)
+                    m4 = st.text_area("🏁 CONCLUSÃO (retomada + proposta + fechamento):", value=pl.get('m4',''), height=80)
+
+                    submitted_plan = st.form_submit_button("⚡ FINALIZAR PLANEJAMENTO E AVALIAR")
+
+                if submitted_plan:
+                    pl_novo = {'p1':p1,'p2':p2,'p3':p3,'p4':p4,'p5':p5,'p6':p6,'p7':p7,'p8':p8,'m1':m1,'m2':m2,'m3':m3,'m4':m4}
+                    st.session_state.relampago_planejamento = pl_novo
+
+                    with st.spinner("A IA está avaliando seu planejamento..."):
+                        prompt_aval_plan = (
+                            f"Avalie o planejamento de redação deste candidato.\n"
+                            f"Tema: {tema}\n\n"
+                            f"Planejamento do candidato:\n"
+                            f"1. Interpretação: {p1}\n2. Palavras-chave: {p2}\n3. Associações: {p3}\n"
+                            f"4. Causas: {p4}\n5. Consequências: {p5}\n6. Arg1: {p6}\n7. Arg2: {p7}\n8. Tese: {p8}\n"
+                            f"Mapa: Introdução: {m1} | Dev1: {m2} | Dev2: {m3} | Conclusão: {m4}\n\n"
+                            f"FORMATO:\n\n"
+                            f"⚡ AVALIAÇÃO DO PLANEJAMENTO — TEMA RELÂMPAGO\n\n"
+                            f"📊 SEU DESEMPENHO:\n"
+                            f"🎯 Interpretação do tema: [X]%\n"
+                            f"🔗 Associações: [X]%\n"
+                            f"💡 Construção de argumentos: [X]%\n"
+                            f"🧠 Tese: [X]%\n"
+                            f"🏗️ Organização/Mapa: [X]%\n\n"
+                            f"✅ VOCÊ FOI BEM EM:\n[lista dos pontos fortes]\n\n"
+                            f"⚠️ PRECISA MELHORAR:\n[lista dos pontos a desenvolver]\n\n"
+                            f"🎯 SEU PRINCIPAL PONTO DE MELHORIA:\n[análise específica do ponto mais crítico]\n\n"
+                            f"💡 SUGESTÃO DE TESE ALTERNATIVA:\n[uma tese mais precisa, se a do candidato puder melhorar]"
+                        )
+                        aval_plan = tutor_ia(prompt_aval_plan)
+                        st.session_state.relampago_aval_plano = aval_plan
+                        st.session_state.relampago_fase = 'redacao'
+                        salvar_estudo("Relâmpago — Planejamento", tema, aval_plan)
+                        st.rerun()
+
+            # ── REDAÇÃO ──
+            elif fase == 'redacao':
+                tema = st.session_state.relampago_tema
+                modo = st.session_state.relampago_modo
+
+                # Avaliação do planejamento
+                if st.session_state.relampago_aval_plano:
+                    with st.expander("📊 Ver avaliação do planejamento"):
+                        st.markdown(f"<div class='card'>{st.session_state.relampago_aval_plano}</div>", unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div style='background:linear-gradient(135deg,#052E16,#064E3B);border:2px solid #16A34A;
+                border-radius:14px;padding:16px 20px;margin-bottom:16px;'>
+                    <div style='color:#86EFAC;font-size:0.8em;'>✅ PLANEJAMENTO CONCLUÍDO — FASE 2</div>
+                    <div style='color:#A7F3D0;font-size:1.2em;font-weight:700;margin-top:6px;'>✍️ Agora transforme seu plano em redação</div>
+                    <div style='color:#6EE7B7;font-size:0.85em;margin-top:4px;'>Tema: {tema}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Planejamento na lateral
+                pl = st.session_state.relampago_planejamento
+                with st.expander("📋 Ver seu planejamento"):
+                    if pl.get('p8'): st.markdown(f"**Tese:** {pl['p8']}")
+                    if pl.get('p6'): st.markdown(f"**Arg. 1:** {pl['p6']}")
+                    if pl.get('p7'): st.markdown(f"**Arg. 2:** {pl['p7']}")
+                    if pl.get('m1'): st.markdown(f"**Intro:** {pl['m1']}")
+                    if pl.get('m4'): st.markdown(f"**Conclusão:** {pl['m4']}")
+
+                col1, col2 = st.columns([3,1])
+                with col1:
+                    tempo_red = st.selectbox("⏱️ Tempo para a redação:", ["30 minutos","45 minutos","60 minutos"])
+                with col2:
+                    concurso_c = st.text_input("Concurso:", value=st.session_state.concurso_foco or "")
+
+                redacao_txt = st.text_area("✍️ Escreva sua redação aqui:", height=400,
+                    value=st.session_state.relampago_redacao,
+                    placeholder="Escreva sua redação dissertativo-argumentativa...")
+
+                palavras = len(redacao_txt.split()) if redacao_txt.strip() else 0
+                linhas = redacao_txt.count('\n') + 1 if redacao_txt.strip() else 0
+                st.markdown(f"**Palavras:** {palavras} · **Linhas estimadas:** {linhas}")
+
+                st.session_state.relampago_redacao = redacao_txt
+
+                if st.button("📤 FINALIZAR E CORRIGIR REDAÇÃO", use_container_width=True):
+                    if redacao_txt.strip() and len(redacao_txt.split()) > 50:
+                        with st.spinner("A IA está corrigindo sua redação..."):
+                            prompt_correcao = (
+                                f"Corrija esta redação de concurso público com análise detalhada por critério.\n"
+                                f"Concurso: {concurso_c or 'geral'}. Tema: {tema}\n\n"
+                                f"Redação do candidato:\n{redacao_txt}\n\n"
+                                f"FORMATO:\n\n"
+                                f"📊 RAIO-X DA SUA REDAÇÃO\n\n"
+                                f"📝 NOTA ESTIMADA: [X]/100\n\n"
+                                f"| Critério | Pontos | Máximo |\n|---|---|---|\n"
+                                f"| 🎯 Atendimento ao tema | [X] | 25 |\n"
+                                f"| 🧠 Argumentação | [X] | 25 |\n"
+                                f"| 🏗️ Estrutura | [X] | 15 |\n"
+                                f"| 🔗 Coesão e coerência | [X] | 15 |\n"
+                                f"| 📖 Linguagem/Gramática | [X] | 15 |\n"
+                                f"| 📝 Adequação à proposta | [X] | 5 |\n"
+                                f"| **TOTAL** | **[X]** | **100** |\n\n"
+                                f"🟢 ONDE VOCÊ FOI BEM:\n[pontos fortes específicos]\n\n"
+                                f"⚠️ ONDE VOCÊ PODE MELHORAR:\n\n"
+                                f"🔴 PRINCIPAL PONTO DE ATENÇÃO:\n"
+                                f"[critério mais problemático]\n"
+                                f"SEU TRECHO: [cite o trecho problemático]\n"
+                                f"O PROBLEMA: [explicação]\n"
+                                f"COMO MELHORAR: [orientação prática]\n"
+                                f"REGRA PARA LEMBRAR: [princípio didático]\n\n"
+                                f"✏️ APRENDA COM SEU TEXTO:\n"
+                                f"SEU TRECHO: [trecho para reescrever]\n"
+                                f"VERSÃO MELHORADA: [sugestão]\n"
+                                f"POR QUÊ MELHOROU: [explicação]\n\n"
+                                f"⚠️ AVISO IMPORTANTE: Esta nota é uma estimativa de treinamento baseada nos critérios configurados. "
+                                f"A nota oficial somente pode ser atribuída pela banca examinadora responsável.\n\n"
+                                f"🎯 PRÓXIMO TREINO RECOMENDADO: [habilidade a desenvolver]"
+                            )
+                            aval_red = tutor_ia(prompt_correcao)
+                            st.session_state.relampago_aval_redacao = aval_red
+
+                            # Registra no histórico
+                            st.session_state.relampago_historico.append({
+                                'data': datetime.now().strftime('%d/%m %H:%M'),
+                                'tema': tema,
+                                'modo': modo,
+                                'planejamento': pl,
+                                'redacao': redacao_txt,
+                                'avaliacao': aval_red,
+                            })
+                            salvar_estudo("Relâmpago — Redação", tema, aval_red)
+                            ganhar_xp('simulado')
+                            st.session_state.relampago_fase = 'resultado'
+                            st.rerun()
+                    else:
+                        st.warning("Escreva pelo menos 50 palavras antes de finalizar.")
+
+                col_volta, col_novo = st.columns(2)
+                with col_volta:
+                    if st.button("← Voltar ao planejamento"):
+                        st.session_state.relampago_fase = 'planejamento'; st.rerun()
+                with col_novo:
+                    if st.button("🔄 Novo tema (descartar)"):
+                        st.session_state.relampago_fase = 'menu'; st.rerun()
+
+            # ── RESULTADO ──
+            elif fase == 'resultado':
+                tema = st.session_state.relampago_tema
+                aval_red = st.session_state.relampago_aval_redacao
+
+                st.success("🔥 Desafio concluído! Aqui está a análise completa.")
+
+                if aval_red:
+                    st.markdown(f"<div class='card'>{aval_red}</div>", unsafe_allow_html=True)
+
+                    # Desafio de reescrita
+                    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+                    st.markdown("### 🔄 Desafio de Reescrita")
+                    st.markdown("*Selecione o trecho mais fraco e tente melhorar.*")
+                    trecho_reescrita = st.text_area("✏️ Cole o trecho que quer reescrever:", height=120)
+                    if st.button("✅ REESCREVER E COMPARAR") and trecho_reescrita.strip():
+                        with st.spinner("Comparando versões..."):
+                            prompt_reesc = (
+                                f"Compare as duas versões deste trecho de redação.\n"
+                                f"Tema: {tema}\n\n"
+                                f"VERSÃO ORIGINAL:\n{trecho_reescrita}\n\n"
+                                f"Analise o que melhorou, o que pode ainda melhorar e dê uma estimativa de ganho de pontos.\n\n"
+                                f"FORMATO:\n\n"
+                                f"PRIMEIRA VERSÃO — PROBLEMAS:\n[análise]\n\n"
+                                f"💡 COMO FICARIA MELHOR:\n[versão sugerida]\n\n"
+                                f"🏆 O QUE VOCÊ APRENDEU:\n[lição didática]"
+                            )
+                            res_reesc = tutor_ia(prompt_reesc)
+                            st.markdown(f"<div class='card-green'>{res_reesc}</div>", unsafe_allow_html=True)
+
+                col_baixar, col_novo = st.columns(2)
+                with col_baixar:
+                    conteudo_export = f"TEMA: {tema}\n\nAVALIAÇÃO:\n{aval_red}\n\nREDAÇÃO:\n{st.session_state.relampago_redacao}"
+                    st.download_button("📋 Baixar resultado (.txt)", data=conteudo_export,
+                        file_name="relampago_resultado.txt", mime="text/plain", use_container_width=True)
+                with col_novo:
+                    if st.button("⚡ NOVO DESAFIO", use_container_width=True):
+                        st.session_state.relampago_fase = 'menu'
+                        st.session_state.relampago_tema = ''
+                        st.rerun()
+
+        # ─── CORRIGIR REDAÇÃO ───
+        with tab_correcao:
+            st.markdown("## 🤖 Correção Inteligente da Redação")
+            st.markdown("*Corrija qualquer redação com análise detalhada por critério.*")
+
+            st.markdown("""<div class='card-yellow'>
+            ⚠️ A nota apresentada é uma <strong>estimativa de treinamento</strong> baseada nos critérios configurados.
+            A nota oficial somente pode ser atribuída pela banca examinadora responsável.
+            </div>""", unsafe_allow_html=True)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                concurso_cor = st.text_input("🎯 Concurso:", value=st.session_state.concurso_foco or "",
+                    placeholder="ex: PRF, INSS, TRT, PC...")
+                banca_cor = st.selectbox("🏛️ Banca:", ["CEBRASPE/CESPE","FCC","VUNESP","FGV","IDECAN","AOCP","Outra"])
+            with col2:
+                tipo_cor = st.selectbox("📝 Tipo:", ["Dissertativo-argumentativa","Outro"])
+                valor_cor = st.number_input("📊 Valor da redação na prova:", min_value=0, max_value=200, value=100)
+
+            tema_cor = st.text_input("📌 Tema da redação:", placeholder="Digite o tema proposto...")
+            redacao_cor = st.text_area("✍️ Cole sua redação:", height=350, placeholder="Cole aqui a redação que deseja corrigir...")
+
+            if st.button("🤖 CORRIGIR REDAÇÃO AGORA", use_container_width=True):
+                if redacao_cor.strip() and tema_cor.strip():
+                    with st.spinner("Analisando sua redação..."):
+                        max_nota = valor_cor
+                        prompt_cor_manual = (
+                            f"Corrija esta redação com análise detalhada.\n"
+                            f"Concurso: {concurso_cor}. Banca: {banca_cor}. Tipo: {tipo_cor}.\n"
+                            f"Valor total da redação: {valor_cor} pontos.\n"
+                            f"Tema: {tema_cor}\n\n"
+                            f"Redação:\n{redacao_cor}\n\n"
+                            f"Adapte os critérios ao valor total ({valor_cor} pts). Use proporção: tema 25%, argumentação 25%, estrutura 15%, coesão 15%, linguagem 15%, adequação 5%.\n\n"
+                            f"FORMATO:\n\n"
+                            f"📊 NOTA ESTIMADA: [X]/{valor_cor}\n\n"
+                            f"CRITÉRIO | PONTOS | MÁXIMO | STATUS\n"
+                            f"🎯 Atendimento ao tema | [X] | [{int(valor_cor*0.25)}] | [🟢/🟡/🔴]\n"
+                            f"🧠 Argumentação | [X] | [{int(valor_cor*0.25)}] | [🟢/🟡/🔴]\n"
+                            f"🏗️ Estrutura | [X] | [{int(valor_cor*0.15)}] | [🟢/🟡/🔴]\n"
+                            f"🔗 Coesão e coerência | [X] | [{int(valor_cor*0.15)}] | [🟢/🟡/🔴]\n"
+                            f"📖 Linguagem/Gramática | [X] | [{int(valor_cor*0.15)}] | [🟢/🟡/🔴]\n"
+                            f"📝 Adequação | [X] | [{int(valor_cor*0.05)}] | [🟢/🟡/🔴]\n\n"
+                            f"🟢 SEUS PONTOS FORTES:\n[análise dos acertos]\n\n"
+                            f"🔴 PRINCIPAL PROBLEMA:\n"
+                            f"Critério: [nome]\nSeu trecho: [cite]\nProblema: [explique]\nComo melhorar: [oriente]\n\n"
+                            f"✏️ APRENDA COM SEU TEXTO:\n"
+                            f"SEU TRECHO: [trecho]\nVERSÃO MELHORADA: [sugestão]\nPOR QUÊ: [explicação]\n\n"
+                            f"📈 NOTA DE CONFIANÇA DA AVALIAÇÃO: [Alta/Média/Baixa]\n"
+                            f"(depende dos critérios disponíveis para {banca_cor})\n\n"
+                            f"⚠️ Esta é uma estimativa de treinamento. A nota oficial é atribuída pela banca."
+                        )
+                        res_cor = tutor_ia(prompt_cor_manual)
+                        salvar_estudo("Correção de Redação", tema_cor, res_cor)
+                        ganhar_xp('simulado')
+                        st.session_state['correcao_manual_temp'] = res_cor
+                else:
+                    st.warning("Preencha o tema e a redação antes de corrigir.")
+
+            if st.session_state.get('correcao_manual_temp'):
+                st.markdown(f"<div class='card'>{st.session_state['correcao_manual_temp']}</div>", unsafe_allow_html=True)
+                st.download_button("📋 Baixar correção (.txt)",
+                    data=st.session_state['correcao_manual_temp'],
+                    file_name="correcao_redacao.txt", mime="text/plain")
+
+                # Reescrita
+                st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+                st.markdown("### 🔄 Desafio de Reescrita")
+                trecho_r = st.text_area("Cole o trecho que quer reescrever:", height=100, key="reescrita_manual")
+                if st.button("🔄 REESCREVER E COMPARAR", key="btn_reescrita_manual") and trecho_r.strip():
+                    with st.spinner("..."):
+                        prompt_rr = (f"Compare e ensine com este trecho de redação sobre o tema '{tema_cor}'.\n\n"
+                                     f"TRECHO ORIGINAL:\n{trecho_r}\n\n"
+                                     f"Analise o problema, sugira uma versão melhorada e explique a lição.")
+                        res_rr = tutor_ia(prompt_rr)
+                        st.markdown(f"<div class='card-green'>{res_rr}</div>", unsafe_allow_html=True)
+
+        # ─── EVOLUÇÃO ───
+        with tab_evolucao:
+            st.markdown("## 📈 Minha Evolução no Tema Relâmpago")
+
+            hist = st.session_state.relampago_historico
+            if not hist:
+                st.info("Realize seu primeiro desafio Tema Relâmpago para ver sua evolução aqui.")
+            else:
+                total = len(hist)
+                st.markdown(f"**{total} desafio(s) realizado(s)**")
+
+                c1, c2, c3 = st.columns(3)
+                c1.markdown(f"<div class='stat-box'><div class='stat-numero'>{total}</div><div>Temas Relâmpago</div></div>", unsafe_allow_html=True)
+                c2.markdown(f"<div class='stat-box'><div class='stat-numero'>{len([h for h in hist if 'Relâmpago' in h.get('modo','')])+len(hist)}</div><div>Desafios totais</div></div>", unsafe_allow_html=True)
+                c3.markdown(f"<div class='stat-box'><div class='stat-numero'>{hist[-1]['modo'].split('(')[0].strip() if hist else '—'}</div><div>Último modo</div></div>", unsafe_allow_html=True)
+
+                st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+                st.markdown("### 🏆 Histórico de Desafios")
+                for i, h in enumerate(reversed(hist[-10:])):
+                    with st.expander(f"#{total-i} — {h['tema'][:60]}... — {h['data']} — {h['modo']}"):
+                        st.markdown(f"**Tema:** {h['tema']}")
+                        if h.get('avaliacao'):
+                            st.markdown(f"<div class='card'>{h['avaliacao'][:500]}...</div>", unsafe_allow_html=True)
+
+                if st.button("🤖 ANÁLISE DE EVOLUÇÃO PELA IA"):
+                    with st.spinner("Analisando seu progresso..."):
+                        hist_resumo = "\n".join(f"Tema: {h['tema'][:50]}, Modo: {h['modo']}" for h in hist[-5:])
+                        prompt_evolucao = (
+                            f"Analise a evolução deste candidato no treinamento Tema Relâmpago.\n"
+                            f"Total de desafios: {total}.\n"
+                            f"Últimos desafios: {hist_resumo}\n\n"
+                            f"FORMATO:\n\n"
+                            f"📈 ANÁLISE DE EVOLUÇÃO\n\n"
+                            f"🏆 O QUE ESTÁ EVOLUINDO:\n[pontos de crescimento]\n\n"
+                            f"⚠️ MAIOR DIFICULDADE IDENTIFICADA:\n[habilidade mais crítica]\n\n"
+                            f"🎯 PRÓXIMO OBJETIVO:\n[meta específica]\n\n"
+                            f"⚡ TREINAMENTO RECOMENDADO:\n[qual modo e habilidade praticar agora]"
+                        )
+                        res_ev = tutor_ia(prompt_evolucao)
+                        st.markdown(f"<div class='card'>{res_ev}</div>", unsafe_allow_html=True)
 
 # --- RODAPÉ ---
 st.markdown(
