@@ -315,6 +315,15 @@ defaults = {
     'relampago_redacao': '',
     'relampago_aval_plano': '',
     'relampago_aval_redacao': '',
+    'smc_fase': 'menu',
+    'smc_questoes': [],
+    'smc_respostas': {},
+    'smc_inicio': 0,
+    'smc_duracao': 3600,
+    'smc_materia': '',
+    'smc_n': 10,
+    'smc_resultado': None,
+    'smc_historico': [],
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -454,12 +463,13 @@ elif st.session_state.etapa == "App":
     barra_salvar()
 
     # NAVBAR linha 1
-    cols1 = st.columns(9)
+    cols1 = st.columns(10)
     nav1 = [("🏠","Home"),("📊","Painel"),("📋","Perfil"),("📅","Plano"),("📝","Resumo"),
-            ("❓","Questoes"),("🧠","Memoria"),("🔄","Revisao"),("🎯","Simulado")]
+            ("❓","Questoes"),("🧠","Memoria"),("🔄","Revisao"),("🎯","Simulado"),("📋","SimuladoMC")]
     lb1 = {"Home":"Início","Painel":"Painel Executivo","Perfil":"Meu Perfil Completo",
            "Plano":"Plano de Estudos","Resumo":"Criar Resumo","Questoes":"Resolver Questões",
-           "Memoria":"Flashcards","Revisao":"Revisão Espaçada","Simulado":"Simulado Inteligente"}
+           "Memoria":"Flashcards","Revisao":"Revisão Espaçada","Simulado":"Simulado Inteligente",
+           "SimuladoMC":"Simulado de Múltipla Escolha — cronometrado"}
     for i,(ic,pg) in enumerate(nav1):
         if cols1[i].button(ic, key=f"nav1_{pg}", help=lb1[pg]):
             st.session_state.pagina = pg; st.rerun()
@@ -1884,7 +1894,29 @@ Exemplo: *"O Estado, por meio de políticas públicas de incentivo à capacitaç
                 pct_tempo = max(0, 1 - decorrido / duracao)
                 cor_timer = "#22C55E" if pct_tempo > 0.5 else ("#B45309" if pct_tempo > 0.2 else "#B91C1C")
 
-                # Área de escrita
+                # 1. TEMA — topo, destaque máximo
+                st.markdown(
+                    "<div style='background:linear-gradient(135deg,#1A1A2E,#0F172A);"
+                    "border:2px solid #F59E0B;border-radius:14px;padding:18px 24px;margin-bottom:12px;'>"
+                    "<div style='color:#94A3B8;font-size:0.72em;letter-spacing:2px;margin-bottom:6px;'>⚡ TEMA DA REDAÇÃO</div>"
+                    f"<div style='color:#FDE68A;font-size:1.25em;font-weight:700;line-height:1.5;'>{tema}</div>"
+                    "</div>",
+                    unsafe_allow_html=True
+                )
+
+                # 2. CRONÔMETRO — embaixo do tema
+                st.markdown(
+                    f"<div style='background:#FFFFFF;border:3px solid {cor_timer};border-radius:12px;"
+                    f"padding:10px 20px;margin-bottom:12px;display:flex;align-items:center;gap:16px;'>"
+                    f"<div style='flex:1;background:#F1F5F9;border-radius:999px;height:10px;overflow:hidden;'>"
+                    f"<div style='height:100%;border-radius:999px;background:{cor_timer};width:{pct_tempo*100:.0f}%;'></div>"
+                    f"</div>"
+                    f"<div style='font-size:2em;font-weight:700;color:{cor_timer};font-family:\"Playfair Display\",serif;white-space:nowrap;'>⏱️ {mins:02d}:{segs:02d}</div>"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+
+                # 3. ÁREA DE ESCRITA — embaixo do cronômetro
                 texto_atual = st.text_area(
                     "✍️ Escreva sua redação:",
                     value=st.session_state.relampago_redacao,
@@ -1894,26 +1926,7 @@ Exemplo: *"O Estado, por meio de políticas públicas de incentivo à capacitaç
                 )
                 st.session_state.relampago_redacao = texto_atual
                 palavras = len(texto_atual.split()) if texto_atual.strip() else 0
-
-                # TEMA + CRONOMETRO + PALAVRAS - colados acima dos botoes, sempre visiveis
-                html_b = (
-                    "<div style='background:linear-gradient(135deg,#1A1A2E,#0F172A);"
-                    "border:2px solid #F59E0B;border-radius:12px;padding:12px 18px;"
-                    "margin-bottom:8px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;'>"
-                    "<div style='flex:1;min-width:200px;'>"
-                    "<div style='color:#475569;font-size:0.7em;letter-spacing:2px;'>&#9889; TEMA</div>"
-                    f"<div style='color:#FDE68A;font-size:0.95em;font-weight:600;line-height:1.4;margin-top:2px;'>{tema}</div>"
-                    "</div>"
-                    "<div style='text-align:center;border-left:1px solid #374151;padding-left:16px;'>"
-                    "<div style='font-size:0.7em;color:#475569;letter-spacing:2px;'>&#9201; TEMPO</div>"
-                    f"<div style='font-size:2em;font-weight:700;color:{cor_timer};'>{mins:02d}:{segs:02d}</div>"
-                    "<div style='background:#374151;border-radius:999px;height:5px;overflow:hidden;margin-top:4px;width:80px;'>"
-                    f"<div style='height:100%;border-radius:999px;background:{cor_timer};width:{pct_tempo*100:.0f}%;'></div>"
-                    "</div></div>"
-                    f"<div style='font-size:0.82em;color:#475569;white-space:nowrap;'>&#128221; {palavras} palavras</div>"
-                    "</div>"
-                )
-                st.markdown(html_b, unsafe_allow_html=True)
+                st.markdown(f"<small style='color:#64748B;'>📝 {palavras} palavras</small>", unsafe_allow_html=True)
 
                 col_e, col_a = st.columns([3,1])
                 with col_e:
@@ -2022,6 +2035,273 @@ Exemplo: *"O Estado, por meio de políticas públicas de incentivo à capacitaç
                         icone = "⏱️" if h.get('tempo_esgotado') else "✅"
                         with st.expander(f"{icone} {h['data']} — {h['tema'][:60]}..."):
                             st.markdown(f"<div class='card'>{h['avaliacao'][:400]}...</div>", unsafe_allow_html=True)
+
+    # ──────────────────────────────────────────
+    # SIMULADO DE MÚLTIPLA ESCOLHA
+    # ──────────────────────────────────────────
+    elif st.session_state.pagina == "SimuladoMC":
+        import time as _time_smc
+
+        st.header("📋 Simulado de Múltipla Escolha")
+        st.markdown("*Questões infinitas, qualquer matéria, cronometrado como no concurso.*")
+
+        fase_smc = st.session_state.smc_fase
+
+        # ── MENU ──
+        if fase_smc == 'menu':
+            if st.session_state.smc_resultado:
+                res = st.session_state.smc_resultado
+                acertos = res['acertos']
+                total   = res['total']
+                taxa    = int(acertos/max(total,1)*100)
+                cor_r   = "#059669" if taxa >= 70 else ("#B45309" if taxa >= 50 else "#B91C1C")
+                st.markdown(
+                    f"<div style='background:#FFFFFF;border:2px solid {cor_r};border-radius:14px;"
+                    f"padding:16px 20px;margin-bottom:20px;'>"
+                    f"<div style='font-size:1.1em;font-weight:700;color:{cor_r};'>Resultado anterior</div>"
+                    f"<div style='font-size:0.9em;color:#1A1A2E;margin-top:4px;'>"
+                    f"✅ {acertos}/{total} corretas · {taxa}% · {res['materia']} · {res['tempo_gasto']}</div>"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                materia_smc = st.text_input("📚 Matéria:", value=st.session_state.smc_materia,
+                    placeholder="ex: Direito Constitucional, Matemática, Português...")
+            with col2:
+                n_smc = st.selectbox("Nº de questões:", [5,10,15,20,30], index=1)
+            with col3:
+                tempo_smc = st.selectbox("Tempo:", ["30 min","1 hora","2 horas","3 horas","Sem limite"])
+
+            concurso_smc = st.text_input("🎯 Concurso (opcional):",
+                value=st.session_state.get('concurso_foco',''),
+                placeholder="ex: PRF, INSS, Receita Federal...")
+            nivel_smc = st.selectbox("Dificuldade:", ["Fácil","Médio","Difícil","Misto"])
+
+            if st.button("📋 GERAR SIMULADO E INICIAR", use_container_width=True):
+                if materia_smc.strip():
+                    with st.spinner(f"Gerando {n_smc} questões de {materia_smc}..."):
+                        prompt_q = (
+                            f"Crie {n_smc} questões de múltipla escolha sobre {materia_smc}.\n"
+                            f"Concurso: {concurso_smc or 'concurso público geral'}. Dificuldade: {nivel_smc}.\n"
+                            f"Estilo de banca: CEBRASPE/FCC — questões com interpretação, não decoreba.\n\n"
+                            f"Para CADA questão use EXATAMENTE este formato:\n\n"
+                            f"QUESTÃO [N]\n"
+                            f"[Enunciado completo e claro]\n"
+                            f"(A) [alternativa]\n"
+                            f"(B) [alternativa]\n"
+                            f"(C) [alternativa]\n"
+                            f"(D) [alternativa]\n"
+                            f"(E) [alternativa]\n"
+                            f"GABARITO: [letra]\n"
+                            f"EXPLICAÇÃO: [1-2 linhas explicando o acerto]\n\n"
+                            f"[Repita para todas as {n_smc} questões]"
+                        )
+                        questoes_txt = tutor_ia(prompt_q)
+
+                        # Parse das questões
+                        import re as _re_smc
+                        blocos = _re_smc.split(r'QUESTÃO\s+\d+', questoes_txt)
+                        blocos = [b.strip() for b in blocos if b.strip()]
+
+                        questoes = []
+                        for b in blocos:
+                            # Extrai alternativas
+                            alts = _re_smc.findall(r'\(([A-E])\)\s*([^\n]+)', b)
+                            gab  = _re_smc.search(r'GABARITO:\s*([A-E])', b)
+                            exp  = _re_smc.search(r'EXPLICAÇÃO:\s*(.+?)(?=\n\n|\Z)', b, _re_smc.DOTALL)
+                            # Enunciado = tudo antes das alternativas
+                            enun = _re_smc.split(r'\([A-E]\)', b)[0].strip()
+                            enun = _re_smc.sub(r'GABARITO.*', '', enun).strip()
+
+                            if alts and gab:
+                                questoes.append({
+                                    'enunciado': enun,
+                                    'alternativas': {l: t.strip() for l,t in alts},
+                                    'gabarito': gab.group(1),
+                                    'explicacao': exp.group(1).strip() if exp else '',
+                                })
+
+                        if questoes:
+                            dur = {'30 min':1800,'1 hora':3600,'2 horas':7200,'3 horas':10800,'Sem limite':99999}
+                            st.session_state.smc_questoes  = questoes
+                            st.session_state.smc_respostas = {}
+                            st.session_state.smc_inicio    = _time_smc.time()
+                            st.session_state.smc_duracao   = dur[tempo_smc]
+                            st.session_state.smc_materia   = materia_smc
+                            st.session_state.smc_n         = len(questoes)
+                            st.session_state.smc_resultado = None
+                            st.session_state.smc_fase      = 'fazendo'
+                            st.rerun()
+                        else:
+                            st.error("Não foi possível parsear as questões. Tente novamente.")
+                else:
+                    st.warning("Informe a matéria antes de gerar.")
+
+            # Histórico
+            if st.session_state.smc_historico:
+                st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+                st.markdown("### 📈 Histórico de Simulados")
+                for h in reversed(st.session_state.smc_historico[-8:]):
+                    taxa_h = int(h['acertos']/max(h['total'],1)*100)
+                    cor_h = "#059669" if taxa_h>=70 else ("#B45309" if taxa_h>=50 else "#B91C1C")
+                    st.markdown(
+                        f"<div class='hist-item'>"
+                        f"<span class='badge'>{h['materia'][:30]}</span> "
+                        f"<small style='color:#888'>{h['data']}</small> "
+                        f"<strong style='color:{cor_h};float:right;'>{h['acertos']}/{h['total']} ({taxa_h}%)</strong>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
+
+        # ── FAZENDO SIMULADO ──
+        elif fase_smc == 'fazendo':
+            questoes  = st.session_state.smc_questoes
+            respostas = st.session_state.smc_respostas
+            duracao   = st.session_state.smc_duracao
+            decorrido = _time_smc.time() - st.session_state.smc_inicio
+            restante  = max(0, duracao - decorrido) if duracao < 99999 else None
+            respondidas = len(respostas)
+            total_q   = len(questoes)
+
+            # Header fixo com timer e progresso
+            if restante is not None:
+                mins_s = int(restante // 60)
+                segs_s = int(restante % 60)
+                pct_t  = max(0, 1 - decorrido / duracao)
+                cor_t  = "#22C55E" if pct_t > 0.5 else ("#B45309" if pct_t > 0.2 else "#B91C1C")
+                timer_html = (
+                    f"<span style='font-size:1.4em;font-weight:700;color:{cor_t};'>"
+                    f"⏱️ {mins_s:02d}:{segs_s:02d}</span>"
+                )
+            else:
+                timer_html = "<span style='color:#64748B;font-size:0.9em;'>⏱️ Sem limite</span>"
+
+            pct_resp = int(respondidas/total_q*100)
+            st.markdown(
+                f"<div style='background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;"
+                f"padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:16px;'>"
+                f"<div style='flex:1;'>"
+                f"<div style='font-size:0.8em;color:#92400E;font-weight:600;'>"
+                f"📋 {st.session_state.smc_materia} · {respondidas}/{total_q} respondidas</div>"
+                f"<div style='background:#FEF3C7;border-radius:999px;height:6px;overflow:hidden;margin-top:4px;'>"
+                f"<div style='height:100%;border-radius:999px;background:#D97706;width:{pct_resp}%;'></div>"
+                f"</div></div>"
+                f"{timer_html}"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+
+            # Questões
+            for i, q in enumerate(questoes):
+                num = i + 1
+                st.markdown(f"**Questão {num}/{total_q}**")
+                st.markdown(f"<div class='questao-box'>{q['enunciado']}</div>", unsafe_allow_html=True)
+
+                opcoes = [f"({l}) {t}" for l,t in sorted(q['alternativas'].items())]
+                chave_radio = f"smc_q_{i}"
+                resp_atual = respostas.get(i)
+                idx_atual  = None
+                if resp_atual:
+                    for j, op in enumerate(opcoes):
+                        if op.startswith(f"({resp_atual})"):
+                            idx_atual = j
+                            break
+
+                escolha = st.radio("", opcoes, key=chave_radio,
+                    index=idx_atual, label_visibility="collapsed")
+                if escolha:
+                    letra = escolha[1]
+                    st.session_state.smc_respostas[i] = letra
+
+                st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+
+            col_e, col_a = st.columns([3,1])
+            with col_e:
+                encerrar_smc = st.button("📤 FINALIZAR E VER GABARITO", use_container_width=True)
+            with col_a:
+                if st.button("🔄 Novo simulado", use_container_width=True):
+                    st.session_state.smc_fase = 'menu'; st.rerun()
+
+            tempo_esgotado_smc = restante is not None and restante <= 0
+
+            if encerrar_smc or tempo_esgotado_smc:
+                tempo_gasto = int(decorrido)
+                tg_min = tempo_gasto // 60
+                tg_seg = tempo_gasto % 60
+                acertos = sum(1 for i,q in enumerate(questoes) if respostas.get(i) == q['gabarito'])
+                st.session_state.smc_resultado = {
+                    'acertos': acertos, 'total': total_q,
+                    'materia': st.session_state.smc_materia,
+                    'tempo_gasto': f"{tg_min}min{tg_seg:02d}s",
+                    'data': datetime.now().strftime('%d/%m %H:%M'),
+                }
+                st.session_state.smc_historico.append(st.session_state.smc_resultado)
+                salvar_estudo("Simulado MC", st.session_state.smc_materia,
+                    f"Acertos: {acertos}/{total_q} ({int(acertos/max(total_q,1)*100)}%)")
+                ganhar_xp('simulado')
+                st.session_state.smc_fase = 'gabarito'
+                st.rerun()
+
+            # Auto-refresh do timer
+            if restante is not None and restante > 0:
+                _time_smc.sleep(0.8)
+                st.rerun()
+
+        # ── GABARITO ──
+        elif fase_smc == 'gabarito':
+            questoes  = st.session_state.smc_questoes
+            respostas = st.session_state.smc_respostas
+            res       = st.session_state.smc_resultado
+            acertos   = res['acertos']
+            total_q   = len(questoes)
+            taxa      = int(acertos/max(total_q,1)*100)
+            cor_taxa  = "#059669" if taxa >= 70 else ("#B45309" if taxa >= 50 else "#B91C1C")
+
+            # Resultado geral
+            st.markdown(
+                f"<div style='background:#FFFFFF;border:3px solid {cor_taxa};border-radius:16px;"
+                f"padding:20px 24px;margin-bottom:20px;text-align:center;'>"
+                f"<div style='font-size:3em;font-weight:700;color:{cor_taxa};'>{taxa}%</div>"
+                f"<div style='font-size:1em;color:#1A1A2E;'>{acertos} de {total_q} corretas · {res['materia']} · {res['tempo_gasto']}</div>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+
+            # Gabarito questão a questão
+            for i, q in enumerate(questoes):
+                resp = respostas.get(i, '—')
+                gab  = q['gabarito']
+                certo = resp == gab
+                cor_q = "#059669" if certo else "#B91C1C"
+                icon  = "✅" if certo else "❌"
+
+                with st.expander(f"{icon} Questão {i+1} — {'CORRETA' if certo else f'ERRADA (você: {resp} · gabarito: {gab})'}"):
+                    st.markdown(f"**{q['enunciado']}**")
+                    for l, t in sorted(q['alternativas'].items()):
+                        prefixo = "→ " if l == gab else "   "
+                        cor_alt = "#059669" if l == gab else ("#B91C1C" if l == resp and not certo else "#1A1A2E")
+                        peso = "700" if l == gab else "400"
+                        st.markdown(f"<span style='color:{cor_alt};font-weight:{peso};'>{prefixo}({l}) {t}</span>", unsafe_allow_html=True)
+                    if q['explicacao']:
+                        st.markdown(f"<div class='card-green' style='margin-top:8px;padding:10px 14px;font-size:0.88em;'>💡 {q['explicacao']}</div>", unsafe_allow_html=True)
+
+            col_novo, col_dl = st.columns(2)
+            with col_novo:
+                if st.button("📋 NOVO SIMULADO", use_container_width=True):
+                    st.session_state.smc_fase = 'menu'
+                    st.session_state.smc_questoes = []
+                    st.session_state.smc_respostas = {}
+                    st.rerun()
+            with col_dl:
+                gabarito_export = f"SIMULADO — {res['materia']}\nData: {res['data']}\nResultado: {acertos}/{total_q} ({taxa}%)\n\n"
+                for i, q in enumerate(questoes):
+                    resp = respostas.get(i,'—')
+                    gab  = q['gabarito']
+                    gabarito_export += f"Q{i+1}: Você={resp} | Gabarito={gab} | {'✅' if resp==gab else '❌'}\n{q['enunciado'][:80]}...\nExplicação: {q['explicacao']}\n\n"
+                st.download_button("📋 Baixar gabarito (.txt)", data=gabarito_export,
+                    file_name="gabarito_simulado.txt", mime="text/plain", use_container_width=True)
 
 # --- RODAPÉ ---
 st.markdown(
