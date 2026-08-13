@@ -1278,7 +1278,7 @@ elif st.session_state.etapa == "App":
             tipos[e['tipo']] = tipos.get(e['tipo'], 0) + 1
 
         # Cor da taxa de acerto
-        cor_taxa = "#059669" if taxa >= 70 else ("#F59E0B" if taxa >= 50 else "#EF4444")
+        cor_taxa = "#059669" if taxa >= 70 else ("#B45309" if taxa >= 50 else "#B91C1C")
         msg_taxa = "🟢 Ótimo!" if taxa >= 70 else ("🟡 Melhorando..." if taxa >= 50 else "🔴 Precisa praticar mais")
 
         c1, c2, c3, c4, c5 = st.columns(5)
@@ -1462,7 +1462,7 @@ elif st.session_state.etapa == "App":
         st.markdown("### 📊 Tabela de Níveis")
         for req, nome, em in NIVEIS:
             atual = xp >= req
-            cor = "#059669" if atual else "#94A3B8"
+            cor = "#059669" if atual else "#475569"
             st.markdown(f"<div style='background:#F8FAFC;border-left:4px solid {cor};border-radius:8px;padding:10px 16px;margin-bottom:6px;'>"
                 f"<strong>{em} {nome}</strong> — {req} XP {'✅' if atual else ''}</div>", unsafe_allow_html=True)
 
@@ -1882,30 +1882,7 @@ Exemplo: *"O Estado, por meio de políticas públicas de incentivo à capacitaç
                 mins = int(restante // 60)
                 segs = int(restante % 60)
                 pct_tempo = max(0, 1 - decorrido / duracao)
-
-                # Cor do cronômetro por urgência
-                cor_timer = "#22C55E" if pct_tempo > 0.5 else ("#F59E0B" if pct_tempo > 0.2 else "#EF4444")
-
-                # Header com tema e cronômetro
-                st.markdown(f"""
-                <div style='background:linear-gradient(135deg,#1A1A2E,#0F172A);border:2px solid #F59E0B;
-                border-radius:16px;padding:18px 24px;margin-bottom:16px;'>
-                    <div style='color:#94A3B8;font-size:0.78em;letter-spacing:2px;'>⚡ TEMA RELÂMPAGO</div>
-                    <div style='color:#FDE68A;font-size:1.3em;font-weight:700;margin-top:6px;line-height:1.4;'>{tema}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                # Cronômetro
-                st.markdown(f"""
-                <div style='background:#FFFFFF;border:3px solid {cor_timer};border-radius:14px;
-                padding:14px 20px;margin-bottom:16px;text-align:center;'>
-                    <div style='font-size:0.8em;color:#64748B;font-weight:600;letter-spacing:2px;'>⏱️ TEMPO RESTANTE</div>
-                    <div style='font-size:3em;font-weight:700;color:{cor_timer};font-family:"Playfair Display",serif;'>{mins:02d}:{segs:02d}</div>
-                    <div style='background:#F1F5F9;border-radius:999px;height:8px;overflow:hidden;margin-top:8px;'>
-                        <div style='height:100%;border-radius:999px;background:{cor_timer};width:{pct_tempo*100:.0f}%;transition:width 1s;'></div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                cor_timer = "#22C55E" if pct_tempo > 0.5 else ("#B45309" if pct_tempo > 0.2 else "#B91C1C")
 
                 # Área de escrita
                 texto_atual = st.text_area(
@@ -1916,9 +1893,27 @@ Exemplo: *"O Estado, por meio de políticas públicas de incentivo à capacitaç
                     key="area_redacao_relampago"
                 )
                 st.session_state.relampago_redacao = texto_atual
-
                 palavras = len(texto_atual.split()) if texto_atual.strip() else 0
-                st.markdown(f"<small style='color:#64748B;'>📝 {palavras} palavras</small>", unsafe_allow_html=True)
+
+                # TEMA + CRONOMETRO + PALAVRAS - colados acima dos botoes, sempre visiveis
+                html_b = (
+                    "<div style='background:linear-gradient(135deg,#1A1A2E,#0F172A);"
+                    "border:2px solid #F59E0B;border-radius:12px;padding:12px 18px;"
+                    "margin-bottom:8px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;'>"
+                    "<div style='flex:1;min-width:200px;'>"
+                    "<div style='color:#475569;font-size:0.7em;letter-spacing:2px;'>&#9889; TEMA</div>"
+                    f"<div style='color:#FDE68A;font-size:0.95em;font-weight:600;line-height:1.4;margin-top:2px;'>{tema}</div>"
+                    "</div>"
+                    "<div style='text-align:center;border-left:1px solid #374151;padding-left:16px;'>"
+                    "<div style='font-size:0.7em;color:#475569;letter-spacing:2px;'>&#9201; TEMPO</div>"
+                    f"<div style='font-size:2em;font-weight:700;color:{cor_timer};'>{mins:02d}:{segs:02d}</div>"
+                    "<div style='background:#374151;border-radius:999px;height:5px;overflow:hidden;margin-top:4px;width:80px;'>"
+                    f"<div style='height:100%;border-radius:999px;background:{cor_timer};width:{pct_tempo*100:.0f}%;'></div>"
+                    "</div></div>"
+                    f"<div style='font-size:0.82em;color:#475569;white-space:nowrap;'>&#128221; {palavras} palavras</div>"
+                    "</div>"
+                )
+                st.markdown(html_b, unsafe_allow_html=True)
 
                 col_e, col_a = st.columns([3,1])
                 with col_e:
