@@ -1896,10 +1896,10 @@ Exemplo: *"O Estado, por meio de políticas públicas de incentivo à capacitaç
 
                 # 1. TEMA — topo, destaque máximo
                 st.markdown(
-                    "<div style='background:linear-gradient(135deg,#1A1A2E,#0F172A);"
-                    "border:2px solid #F59E0B;border-radius:14px;padding:18px 24px;margin-bottom:12px;'>"
-                    "<div style='color:#94A3B8 !important;font-size:0.72em;letter-spacing:2px;margin-bottom:6px;'>⚡ TEMA DA REDAÇÃO</div>"
-                    f"<div style='color:#FFFFFF !important;font-size:1.25em;font-weight:700;line-height:1.5;'>{tema}</div>"
+                    "<div style='background:linear-gradient(135deg,#FFFBEB,#FEF3C7);"
+                    "border:3px solid #F59E0B;border-radius:14px;padding:18px 24px;margin-bottom:12px;'>"
+                    "<div style='color:#92400E;font-size:0.72em;letter-spacing:2px;margin-bottom:6px;font-weight:600;'>⚡ TEMA DA REDAÇÃO</div>"
+                    f"<div style='color:#1A1A2E;font-size:1.25em;font-weight:700;line-height:1.5;'>{tema}</div>"
                     "</div>",
                     unsafe_allow_html=True
                 )
