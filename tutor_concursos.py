@@ -8,104 +8,80 @@ st.set_page_config(page_title="TUTOR DE CONCURSOS IA", layout="wide")
 
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    .stApp { background- color: #000000; font-family: 'DM Sans', sans-serif; }
-    [data-testid="stSidebar"] { display: none; }
+    .stApp { background-color:#FDFAF6; font-family:'Inter',sans-serif; }
+    [data-testid="stSidebar"] { display:none; }
 
-    .stTextInput>div>div>input,
-    .stTextArea>div>textarea,
-    .stSelectbox>div>div>div,
-    .stNumberInput>div>div>input {
-        background-color: #FFFBEB !important;
-        color: #000000 !important;
-        border: 1px solid #FCD34D !important;
-        font-family: 'DM Sans', sans-serif !important;
+    .stTextInput>div>div>input, .stTextArea>div>textarea,
+    .stSelectbox>div>div>div, .stNumberInput>div>div>input {
+        background-color:#FFFFFF !important; color:#1A1A2E !important;
+        border:1px solid #CED4DA !important; font-family:'Inter',sans-serif !important;
     }
 
     .stButton>button {
-        width: 100%; border-radius: 12px; height: 3.5em;
-        background: linear-gradient(135deg, #D97706, #F59E0B) !important;
-        color: white !important; font-weight: 600; border: none;
-        box-shadow: 2px 2px 8px rgba(217,119,6,0.25);
-        font-family: 'DM Sans', sans-serif !important;
-        transition: all 0.2s ease;
+        width:100%; border-radius:10px; height:3.2em;
+        background:linear-gradient(135deg,#92400E,#78350F) !important; color:white !important;
+        font-weight:600; border:none; box-shadow:2px 2px 8px rgba(0,0,0,0.1);
+        font-family:'Inter',sans-serif !important; transition:all 0.2s ease;
     }
-    .stButton>button:hover { background: linear-gradient(135deg, #B45309, #D97706) !important; transform: translateY(-1px); }
+    .stButton>button:hover { background:linear-gradient(135deg,#78350F,#5C2D0A) !important; transform:translateY(-1px); }
     .stApp .stButton>button, .stApp .stButton>button p,
-    .stApp .stButton>button span, .stApp .stButton>button div { color: white !important; }
+    .stApp .stButton>button span, .stApp .stButton>button div { color:white !important; }
 
-    .stApp h1, .stApp h2, .stApp h3 { font-family: 'Playfair Display', serif !important; color: #1A1A2E !important; }
+    .stApp h1, .stApp h2, .stApp h3 { color:#3D2B1F !important; font-family:'Inter',sans-serif !important; font-weight:700 !important; }
 
-    .card { background: linear-gradient(135deg,#FFFBEB,#FEF3C7); padding:22px; border-radius:16px; border:1px solid #FCD34D; margin-bottom:15px; white-space:normal; word-wrap:break-word; box-shadow:0 2px 12px rgba(217,119,6,0.08); }
-    .stApp .card, .stApp .card p, .stApp .card span, .stApp .card div, .stApp .card strong, .stApp .card em { color: #1A1A2E !important; }
+    .card { background:linear-gradient(135deg,#FDF8F0,#FAF0E6); padding:20px; border-radius:14px; border:1px solid #D4B896; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
+    .stApp .card, .stApp .card p, .stApp .card span, .stApp .card div, .stApp .card strong, .stApp .card em { color:#3D2B1F !important; }
 
-    .card-dark { background:linear-gradient(135deg,#1C1100,#2D1A00); padding:22px; border-radius:16px; border:1px solid #D97706; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
-    .stApp .card-dark, .stApp .card-dark p, .stApp .card-dark span, .stApp .card-dark div, .stApp .card-dark strong { color:#FDE68A !important; }
+    .card-dark { background:linear-gradient(135deg,#FAF0E6,#F5E6D3); padding:20px; border-radius:14px; border:1px solid #C4956A; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
+    .stApp .card-dark, .stApp .card-dark p, .stApp .card-dark span, .stApp .card-dark div, .stApp .card-dark strong { color:#3D2B1F !important; }
 
-    .card-blue { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); padding:22px; border-radius:16px; border:1px solid #93C5FD; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
-    .stApp .card-blue, .stApp .card-blue p, .stApp .card-blue span, .stApp .card-blue div { color:#1E3A8A !important; }
-
-    .card-green { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); padding:22px; border-radius:16px; border:1px solid #86EFAC; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
+    .card-green { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); padding:20px; border-radius:14px; border:1px solid #86EFAC; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
     .stApp .card-green, .stApp .card-green p, .stApp .card-green span, .stApp .card-green div { color:#14532D !important; }
 
-    .card-red { background:linear-gradient(135deg,#FFF5F5,#FEE2E2); padding:22px; border-radius:16px; border:1px solid #FECACA; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
+    .card-blue { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); padding:20px; border-radius:14px; border:1px solid #93C5FD; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
+    .stApp .card-blue, .stApp .card-blue p, .stApp .card-blue span, .stApp .card-blue div { color:#1E3A8A !important; }
+
+    .card-red { background:linear-gradient(135deg,#FFF5F5,#FEE2E2); padding:20px; border-radius:14px; border:1px solid #FECACA; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
     .stApp .card-red, .stApp .card-red p, .stApp .card-red span, .stApp .card-red div { color:#7F1D1D !important; }
 
-    .card-purple { background:linear-gradient(135deg,#F5F3FF,#EDE9FE); padding:22px; border-radius:16px; border:1px solid #C4B5FD; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
-    .stApp .card-purple, .stApp .card-purple p, .stApp .card-purple span, .stApp .card-purple div { color:#4C1D95 !important; }
+    .card-yellow { background:linear-gradient(135deg,#FFFBEB,#FEF3C7); padding:18px; border-radius:12px; border:1px solid #FCD34D; margin-bottom:12px; white-space:normal; word-wrap:break-word; }
+    .stApp .card-yellow, .stApp .card-yellow p, .stApp .card-yellow span, .stApp .card-yellow div { color:#78350F !important; }
 
-    .painel-exec { background:linear-gradient(135deg,#1A1A2E,#16213E); border:2px solid #F59E0B; border-radius:20px; padding:28px; margin-bottom:20px; }
-    .stApp .painel-exec, .stApp .painel-exec p, .stApp .painel-exec span, .stApp .painel-exec div, .stApp .painel-exec strong { color:#FDE68A !important; }
+    .stat-box { background:#FFFFFF; border-radius:12px; padding:16px; text-align:center; border:1px solid #D4B896; }
+    .stApp .stat-box div, .stApp .stat-box span, .stApp .stat-box p { color:#3D2B1F !important; }
+    .stApp .stat-numero, .stat-numero { font-size:2em; font-weight:700; color:#7C5C3E !important; }
 
-    .indice-box { background:linear-gradient(135deg,#D97706,#F59E0B); border-radius:18px; padding:24px; text-align:center; box-shadow:0 4px 24px rgba(217,119,6,0.3); margin-bottom:16px; }
-    .stApp .indice-box, .stApp .indice-box p, .stApp .indice-box span, .stApp .indice-box div { color:white !important; }
-    .indice-numero { font-size:3.5em; font-weight:700; font-family:'Playfair Display',serif; color:white !important; }
-    .stApp .indice-numero { color:white !important; }
+    .hist-item { background:#FFFFFF; border-radius:10px; padding:12px 16px; margin-bottom:8px; border-left:4px solid #D4B896; }
+    .stApp .hist-item, .stApp .hist-item p, .stApp .hist-item span, .stApp .hist-item div, .stApp .hist-item small { color:#3D2B1F !important; }
 
-    .card-orange { background:linear-gradient(135deg,#FFFBEB,#FEF3C7); padding:22px; border-radius:16px; border:1px solid #FCD34D; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
-    .stApp .card-orange, .stApp .card-orange p, .stApp .card-orange span,
-    .stApp .card-orange div, .stApp .card-orange strong, .stApp .card-orange em { color:#1A1A2E !important; }
+    .badge { background:#92400E; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-verde { background:#059669; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-amarelo { background:#B45309; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-azul { background:#1D4ED8; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-roxo { background:#6D28D9; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
 
-    .missao-box { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); border:2px solid #16A34A; border-radius:16px; padding:20px; margin-bottom:16px; }
-    .stApp .missao-box, .stApp .missao-box p, .stApp .missao-box span, .stApp .missao-box div, .stApp .missao-box strong { color:#14532D !important; }
+    .divider { border:none; height:1px; background:linear-gradient(to right,transparent,#D4B896,transparent); margin:18px 0; }
 
-    .xp-box { background:linear-gradient(135deg,#F5F3FF,#EDE9FE); border:2px solid #7C3AED; border-radius:16px; padding:20px; text-align:center; margin-bottom:16px; }
-    .stApp .xp-box, .stApp .xp-box p, .stApp .xp-box span, .stApp .xp-box div { color:#4C1D95 !important; }
+    .chat-user { background:#FFFFFF; border:1px solid #D4B896; border-radius:12px 12px 4px 12px; padding:12px 16px; margin:8px 0; }
+    .stApp .chat-user, .stApp .chat-user p, .stApp .chat-user span, .stApp .chat-user div { color:#3D2B1F !important; }
 
-    .conquista-item { background:#FFFBEB; border:1px solid #FCD34D; border-radius:10px; padding:12px 16px; margin-bottom:8px; display:inline-block; margin:4px; }
-    .stApp .conquista-item, .stApp .conquista-item p, .stApp .conquista-item span { color:#92400E !important; }
+    .chat-persona { background:#FDFAF6; border:1px solid #D4B896; border-radius:4px 12px 12px 12px; padding:12px 16px; margin:8px 0; }
+    .stApp .chat-persona, .stApp .chat-persona p, .stApp .chat-persona span, .stApp .chat-persona div { color:#3D2B1F !important; }
 
-    .radar-item { background:#F8FAFC; border-radius:10px; padding:10px 16px; margin-bottom:6px; border-left:4px solid #F59E0B; }
-    .stApp .radar-item, .stApp .radar-item p, .stApp .radar-item span, .stApp .radar-item div { color:#1A1A2E !important; }
+    .questao-box { background:#FFFFFF; border:2px solid #D4B896; border-radius:12px; padding:18px; margin-bottom:14px; }
+    .stApp .questao-box, .stApp .questao-box p, .stApp .questao-box span, .stApp .questao-box div { color:#3D2B1F !important; }
 
-    .streak-box { background:linear-gradient(135deg,#FEF3C7,#FFFBEB); border:2px solid #F59E0B; border-radius:16px; padding:20px; text-align:center; margin-bottom:16px; }
-    .stApp .streak-box, .stApp .streak-box p, .stApp .streak-box span, .stApp .streak-box div { color:#92400E !important; }
+    .avaliacao-box { background:#FFFFFF; border:2px solid #D4B896; border-radius:14px; padding:18px; margin-bottom:12px; }
+    .stApp .avaliacao-box, .stApp .avaliacao-box p, .stApp .avaliacao-box span, .stApp .avaliacao-box div { color:#3D2B1F !important; }
 
+    .meta-box { background:#FFFFFF; border:2px solid #D4B896; border-radius:12px; padding:16px; text-align:center; margin:10px 0; }
+    .stApp .meta-box, .stApp .meta-box div, .stApp .meta-box span { color:#3D2B1F !important; }
+    .stApp .meta-numero { font-size:2em; font-weight:700; color:#7C5C3E !important; }
 
-    .stat-box { background:#FFFBEB; border-radius:12px; padding:18px; text-align:center; border:1px solid #FCD34D; }
-    .stApp .stat-box div, .stApp .stat-box span, .stApp .stat-box p { color:#1A1A2E !important; }
-    .stApp .stat-numero, .stat-numero { font-size:2em; font-weight:700; color:#D97706 !important; font-family:'Playfair Display',serif; }
-
-    .hist-item { background:#FFFBEB; border-radius:10px; padding:12px 16px; margin-bottom:8px; border-left:4px solid #F59E0B; }
-    .stApp .hist-item, .stApp .hist-item p, .stApp .hist-item span, .stApp .hist-item div, .stApp .hist-item small { color:#1A1A2E !important; }
-
-    .badge { background:#D97706; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
-    .badge-verde { background:#059669; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
-    .badge-azul { background:#1D4ED8; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
-    .badge-roxo { background:#7C3AED; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
-    .badge-red { background:#EF4444; color:white !important; padding:4px 14px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
-
-    .perfil-btn>button { background:linear-gradient(135deg,#D97706,#F59E0B) !important; color:white !important; font-weight:700 !important; border-radius:12px !important; height:3em !important; }
-    .perfil-btn>button, .perfil-btn>button p, .perfil-btn>button span { color:white !important; }
-
-    .divider { border:none; height:1px; background:linear-gradient(to right,transparent,#FCD34D,transparent); margin:20px 0; }
-    .questao-box { background:#FFFFFF; border:2px solid #FCD34D; border-radius:14px; padding:20px; margin-bottom:16px; }
-    .stApp .questao-box, .stApp .questao-box p, .stApp .questao-box span, .stApp .questao-box div { color:#1A1A2E !important; }
-
-    /* Garante que texto normal (fora de cards) seja sempre preto no fundo branco */
-    .stApp > div > div > div > div { color: #1A1A2E; }
-    .stMarkdown p, .stMarkdown span, .stMarkdown div { color: #1A1A2E !important; }
+    .chat-scroll-container { max-height:40vh; overflow-y:auto; display:flex; flex-direction:column; scroll-behavior:smooth; padding-bottom:4px; }
+    .chat-scroll-container > * { flex-shrink:0; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -354,7 +330,7 @@ def tutor_ia(prompt: str, system_extra: str = "") -> str:
         )
         response = client.chat.completions.create(
             messages=[{"role":"system","content":system},{"role":"user","content":prompt}],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
         )
         return response.choices[0].message.content
     except Exception as e:
@@ -377,7 +353,6 @@ def barra_salvar():
             f"{xp} XP · {concurso}</span>"
             f"</div>", unsafe_allow_html=True)
     with col_btn:
-        st.markdown("<br>", unsafe_allow_html=True)
         st.download_button("💾 SALVAR DADOS (.json)", data=gerar_json_sessao(),
             file_name=f"tutor_{nome_u}.json", mime="application/json", use_container_width=True)
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
@@ -389,10 +364,8 @@ def barra_salvar():
 if st.session_state.etapa == "Login":
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
         st.title("🎓 TUTOR DE CONCURSOS IA")
         st.markdown("**Seu mentor estratégico de preparação para concursos públicos.**")
-        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;
         padding:12px 16px;margin-bottom:16px;font-size:0.88em;color:#1A1A2E;line-height:1.6;">
         🔒 <strong>ACESSO RESTRITO A CLIENTES DO QUIZ COM PRÊMIOS</strong><br>
@@ -501,7 +474,6 @@ elif st.session_state.etapa == "App":
             _, nivel_nome, nivel_emoji = calcular_nivel(xp)
             st.markdown(f"<span class='badge'>{nivel_emoji} {nivel_nome}</span> <span class='badge-azul'>🎯 {concurso}</span>", unsafe_allow_html=True)
         with col_r:
-            st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🚪 Sair"):
                 for k in list(st.session_state.keys()):
                     del st.session_state[k]
@@ -1198,7 +1170,6 @@ elif st.session_state.etapa == "App":
             </div>""", unsafe_allow_html=True)
 
         # Sugestões rápidas
-        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("**⚡ Perguntas rápidas:**")
         col_s1, col_s2, col_s3 = st.columns(3)
         sugestoes = [
@@ -1256,7 +1227,6 @@ elif st.session_state.etapa == "App":
             ]
 
             st.markdown(f"**{len(mats_filtrados)} material(is) encontrado(s)**")
-            st.markdown("<br>", unsafe_allow_html=True)
 
             for i, item in enumerate(reversed(mats_filtrados)):
                 idx_real = len(st.session_state.biblioteca_materiais) - 1 - i
@@ -1299,7 +1269,6 @@ elif st.session_state.etapa == "App":
         c5.markdown(f"<div class='stat-box'><div class='stat-numero'>{bib}</div><div>Na biblioteca</div></div>", unsafe_allow_html=True)
 
         # Ajuste manual de questões
-        st.markdown("<br>", unsafe_allow_html=True)
         with st.expander("✏️ Ajustar contagem de questões"):
             col_r, col_c = st.columns(2)
             with col_r:
@@ -1313,12 +1282,10 @@ elif st.session_state.etapa == "App":
                 st.rerun()
 
         if st.session_state.historico_estudos:
-            st.markdown("<br>", unsafe_allow_html=True)
             col_f, col_ex = st.columns([3, 1])
             with col_f:
                 filtro = st.selectbox("Filtrar:", ["Todos"] + list(tipos.keys()))
             with col_ex:
-                st.markdown("<br>", unsafe_allow_html=True)
                 historico_txt = "\n\n".join(
                     f"[{e['data']}] {e['tipo']} — {e['materia']}\n{e['conteudo']}\n{'─'*40}"
                     for e in st.session_state.historico_estudos
@@ -1342,7 +1309,6 @@ elif st.session_state.etapa == "App":
                             st.session_state.historico_estudos.pop(idx_real)
                             st.rerun()
 
-            st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🗑️ Limpar Todo o Histórico"):
                 st.session_state.historico_estudos = []
                 st.rerun()
@@ -1434,7 +1400,6 @@ elif st.session_state.etapa == "App":
         obtidas = len(conquistadas)
         st.markdown(f"**{obtidas} de {total} conquistas desbloqueadas**")
         st.progress(obtidas / total if total > 0 else 0)
-        st.markdown("<br>", unsafe_allow_html=True)
 
         cols_c = st.columns(3)
         for i, (chave, nome, desc) in enumerate(CONQUISTAS_DEF):
